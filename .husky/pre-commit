@@ -1,0 +1,3 @@
+npx tsc --noEmit
+node scripts/staged-secret-scan.cjs
+npx lint-staged

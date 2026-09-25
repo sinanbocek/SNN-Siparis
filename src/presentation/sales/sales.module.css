@@ -1,0 +1,710 @@
+.page {
+  padding: 16px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.muted {
+  color: var(--mute);
+}
+
+.center {
+  text-align: center;
+  justify-self: center;
+}
+
+.empty {
+  padding: 40px 0;
+  text-align: center;
+  color: var(--mute);
+}
+
+/* araç çubuğu */
+.toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.search {
+  flex: 1 1 240px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--mute);
+}
+
+.search input {
+  flex: 1;
+  border: 0;
+  padding-left: 0;
+  background: transparent;
+  min-width: 0;
+}
+
+.search input:focus-visible {
+  box-shadow: none;
+}
+
+.segment {
+  display: inline-flex;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+}
+
+.segment button {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+.segment button[aria-pressed="true"] {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* kart görünümü */
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.card {
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card > div:first-child {
+  aspect-ratio: 16 / 10;
+}
+
+.cardOn {
+  box-shadow: var(--shadow);
+}
+
+.cardTitle {
+  font-size: 19px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.variantList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.variantList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+
+.variantList li > div:first-child {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.variantName {
+  font-weight: 500;
+}
+
+.variantPrice {
+  font-size: 14px;
+}
+
+/* liste görünümü */
+.listTable {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.listRow {
+  display: grid;
+  grid-template-columns: 60px 1fr 110px 100px 150px;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 12px;
+  border-top: 1px solid var(--line);
+  border-left: 4px solid transparent;
+}
+
+.listHead {
+  border-top: 0;
+  color: var(--mute);
+  font-size: 14px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  background: var(--surface-muted);
+}
+
+.listRowOn {
+  background: var(--surface-muted);
+}
+
+.listName b {
+  font-weight: 600;
+}
+
+/* sepet */
+.cartLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 16px;
+  align-items: start;
+}
+
+.cartTableWrap {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px 14px 14px;
+}
+
+.cartRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 100px 150px 64px 120px;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.cartHead {
+  border-top: 0;
+  color: var(--mute);
+  font-size: 14px;
+}
+
+.cartName {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.psfButton {
+  border: 0;
+  padding: 2px 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 14px;
+  text-decoration: underline dotted;
+  min-height: 32px;
+}
+
+.psfEdit {
+  width: 160px;
+}
+
+.badge {
+  font-size: 12px;
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-weight: 600;
+}
+
+.mfInput {
+  width: 56px;
+  text-align: center;
+  padding: 0 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mfManual {
+  border-color: var(--warn);
+  background: var(--warn-soft);
+}
+
+.totals {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 20px;
+  margin: 12px 0 0 auto;
+  max-width: 420px;
+  padding-top: 12px;
+  border-top: 2px solid var(--ink);
+}
+
+.totals dt {
+  color: var(--ink-2);
+}
+
+.totals dd {
+  margin: 0;
+}
+
+.totalsRow {
+  display: contents;
+}
+
+.grand {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--ink) !important;
+}
+
+.cartActions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.primary,
+.ghost,
+.whatsapp {
+  min-height: var(--touch);
+  padding: 0 20px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.primary {
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+}
+
+.primary:hover {
+  background: var(--accent-hover);
+}
+
+.ghost {
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink-2);
+}
+
+.whatsapp {
+  border: 0;
+  background: #128c4a;
+  color: #fff;
+  font-size: 17px;
+}
+
+.primary:disabled,
+.ghost:disabled,
+.whatsapp:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.linkButton {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  padding: 0;
+  min-height: 36px;
+  text-decoration: underline;
+  align-self: flex-start;
+}
+
+/* eczane kazancı paneli */
+.panel {
+  position: sticky;
+  top: 76px;
+  background: var(--surface);
+  border: 2px solid var(--good);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panel h2 {
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--good);
+}
+
+.panelItem {
+  display: flex;
+  flex-direction: column;
+}
+
+.panelItem span {
+  color: var(--mute);
+  font-size: 14px;
+}
+
+.panelItem b {
+  font-size: 32px;
+  line-height: 1.15;
+  text-align: left;
+  letter-spacing: -0.5px;
+}
+
+.panelProfit b {
+  color: var(--good);
+  font-size: 38px;
+}
+
+.panelProfit em {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--good);
+}
+
+.goodText {
+  color: var(--good);
+}
+
+.mfInfo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--good-soft);
+  color: var(--good);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.markup {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.markupStepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.markupStepper button {
+  width: var(--touch);
+  height: var(--touch);
+  border: 0;
+  background: var(--surface-muted);
+  display: grid;
+  place-items: center;
+}
+
+.markupStepper b {
+  min-width: 64px;
+  text-align: center;
+  font-size: 18px;
+}
+
+.panelFoot {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--mute);
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+/* telefonda üst kazanç şeridi (S8) */
+.strip {
+  display: none;
+}
+
+.emptyCart {
+  text-align: center;
+  padding: 60px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--mute);
+}
+
+.emptyCart h2 {
+  color: var(--ink);
+}
+
+/* tamamla penceresi */
+.checkout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.checkoutForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.checkoutForm label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+.shareButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.shareButtons .whatsapp {
+  flex: 1 1 100%;
+}
+
+.shareButtons .ghost {
+  flex: 1 1 0;
+}
+
+.hint {
+  font-size: 14px;
+  color: var(--mute);
+}
+
+.formMessage {
+  font-size: 14px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.checkoutPreview {
+  background: var(--bg);
+  border-radius: var(--radius);
+  padding: 10px;
+}
+
+.previewBox {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.previewInner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1080px;
+  transform-origin: 0 0;
+}
+
+/* siparişler */
+.orderList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.orderList li + li {
+  border-top: 1px solid var(--line);
+}
+
+.orderList button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  min-height: 64px;
+}
+
+.orderMain,
+.orderSide {
+  display: flex;
+  flex-direction: column;
+}
+
+.orderSide {
+  align-items: flex-end;
+}
+
+.orderMain span,
+.orderSide span {
+  font-size: 14px;
+}
+
+.statusShared {
+  color: var(--good);
+  font-weight: 600;
+}
+
+.statusReady {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+@media (max-width: 1024px) {
+  .cartLayout {
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+
+  .cartRow {
+    grid-template-columns: minmax(0, 1fr) 90px 140px 60px 104px;
+  }
+}
+
+@media (max-width: 860px) {
+  .cartLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .panel {
+    position: static;
+  }
+
+  .checkout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .page {
+    padding: 12px;
+  }
+
+  .hidePhone {
+    display: none;
+  }
+
+  .listRow {
+    grid-template-columns: 52px minmax(0, 1fr) 84px 136px;
+    padding: 6px 8px;
+  }
+
+  .cardGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .strip {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 10px;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    margin: -12px -12px 12px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border-bottom: 2px solid var(--good);
+  }
+
+  .strip div {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .strip span {
+    font-size: 12px;
+    color: var(--mute);
+  }
+
+  .strip b {
+    font-size: 22px;
+    text-align: left;
+  }
+
+  .strip em {
+    font-style: normal;
+    font-weight: 700;
+    color: var(--good);
+  }
+
+  .cartHead {
+    display: none;
+  }
+
+  .cartRow {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "name amount"
+      "qty mf";
+    row-gap: 8px;
+  }
+
+  .cartRow > :nth-child(1) {
+    grid-area: name;
+  }
+
+  .cartRow > :nth-child(2) {
+    display: none;
+  }
+
+  .cartRow > :nth-child(3) {
+    grid-area: qty;
+    justify-self: start;
+  }
+
+  .cartRow > :nth-child(4) {
+    grid-area: mf;
+  }
+
+  .cartRow > :nth-child(5) {
+    grid-area: amount;
+    font-weight: 600;
+  }
+
+  .cartActions {
+    flex-direction: column-reverse;
+  }
+
+  .cartActions button {
+    width: 100%;
+  }
+}

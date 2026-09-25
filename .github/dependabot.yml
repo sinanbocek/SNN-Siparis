@@ -1,0 +1,30 @@
+# Bağımlılık güncellemelerini haftalık ve gruplu tutar (SNN-Proje-ve-Nakit-Akış ile aynı politika).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Istanbul
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(ci)"
+      include: scope
+    groups:
+      production:
+        applies-to: version-updates
+        dependency-type: production
+        update-types: [minor, patch]
+      dev-tooling:
+        applies-to: version-updates
+        dependency-type: development
+        update-types: [minor, patch]
+      security:
+        applies-to: security-updates
+        patterns: ["*"]
+    ignore:
+      # Major yükseltmeler elle yapılır; Node 24 uyumu ayrıca doğrulanır.
+      - dependency-name: "*"
+        update-types: [version-update:semver-major]

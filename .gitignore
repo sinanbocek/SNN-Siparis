@@ -1,0 +1,26 @@
+node_modules/
+dist/
+dev-dist/
+.firebase/
+coverage/
+*.tsbuildinfo
+*.log
+
+# Ortam / sırlar
+.env
+.env.local
+.env*.local
+
+# Örnek belgeler (üçüncü kişi verisi içerir; depoya girmez)
+/docs/examples/
+# Ham ürün görselleri (küçültülmüş hâlleri public/products altında)
+/docs/images/
+
+# Editör / OS
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+.idea/
+
+# Yerel araç ayarları
+.claude/

@@ -1,0 +1,66 @@
+name: SNN Siparis CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "CHANGELOG.md"
+      - "README.md"
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "CHANGELOG.md"
+      - "README.md"
+
+# Kota koruması: aynı dala arka arkaya gönderimde eski koşum iptal edilir; main'de iptal yok.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npx vite build
+
+      # Sunum katmanında ABACUS dışı biçim/hesap sıfır olmalı.
+      - name: ABACUS grep guard
+        run: |
+          if grep -rnE "toFixed|Intl\.|toLocale|\bMath\.|parseFloat" src/presentation --include=*.ts --include=*.tsx; then
+            echo "presentation katmanında ABACUS dışı biçim/hesap bulundu"; exit 1
+          fi
+
+      # Satış ekranları maliyeti asla görmez (G2).
+      - name: Cost leak guard
+        run: |
+          if grep -rniE "cost|maliyet" src/presentation/sales src/presentation/parts --include=*.ts --include=*.tsx; then
+            echo "satış ekranlarında maliyet izi bulundu"; exit 1
+          fi

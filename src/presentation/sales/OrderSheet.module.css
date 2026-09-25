@@ -1,0 +1,165 @@
+/* Sabit piksel: PNG her cihazda aynı çıksın (1080 px genişlik). */
+.sheet {
+  width: 1080px;
+  padding: 56px 60px 48px;
+  background: #ffffff;
+  color: #0d1321;
+  font-family: "Inter Variable", "Inter", system-ui, sans-serif;
+  font-size: 30px;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 28px;
+  border-bottom: 4px solid #0d1321;
+}
+
+.logo {
+  width: 220px;
+  height: 110px;
+  border: 3px dashed #98a2b3;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: #98a2b3;
+  font-size: 26px;
+  letter-spacing: 4px;
+}
+
+.title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.title b {
+  font-size: 50px;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+}
+
+.title span {
+  font-size: 28px;
+  color: #475467;
+}
+
+.pharmacy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 30px 0 26px;
+}
+
+.pharmacy b {
+  font-size: 44px;
+  line-height: 1.15;
+}
+
+.pharmacy span {
+  color: #475467;
+  font-size: 28px;
+}
+
+.lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 2px solid #0d1321;
+}
+
+.lines li {
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  gap: 18px;
+  align-items: center;
+  padding: 20px 0;
+  border-bottom: 1px solid #d4d8e0;
+}
+
+.idx {
+  color: #667085;
+  font-size: 28px;
+}
+
+.lineMain {
+  display: flex;
+  flex-direction: column;
+}
+
+.lineMain b {
+  font-size: 34px;
+  line-height: 1.2;
+}
+
+.lineMain span {
+  color: #344054;
+  font-size: 30px;
+}
+
+.amount {
+  font-size: 34px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.totals {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 30px;
+  margin: 26px 0 0 280px;
+}
+
+.totals dt {
+  color: #344054;
+}
+
+.totals dd {
+  margin: 0;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.row {
+  display: contents;
+}
+
+.grand {
+  font-size: 40px;
+  font-weight: 700;
+  color: #0d1321 !important;
+  padding-top: 12px;
+  border-top: 3px solid #0d1321;
+}
+
+.words {
+  margin-top: 14px;
+  text-align: right;
+  font-style: italic;
+  font-size: 26px;
+  color: #475467;
+  word-break: break-word;
+}
+
+.note {
+  margin-top: 28px;
+  padding: 18px 22px;
+  background: #f5f6f8;
+  border-radius: 12px;
+  font-size: 30px;
+}
+
+.foot {
+  margin-top: 36px;
+  padding-top: 20px;
+  border-top: 1px solid #d4d8e0;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  font-size: 28px;
+  color: #344054;
+}
