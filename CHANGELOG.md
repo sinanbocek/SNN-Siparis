@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## 0.4.0 — 25.09.2026
+
+- Yönetim → **Raporlar**: dönem seçimi ve önceki döneme göre değişim; ciro, kâr ve marj,
+  sipariş ve ortalama, kutu ve MF; ciro-kâr sütun grafiği (fareyle ayrıntı); en çok satanlar
+  (ciro / kâr / adet); ürün grupları; eczaneler; otomatik "öne çıkanlar"
+- Kâr bugünkü alış fiyatıyla; MF kutuların alışı kârdan düşer; alışı girilmemiş ciro ayrı
+- "Örnek veriyle göster" önizlemesi (kaydedilmez)
+- Sıfır tutar her yerde "₺0,00"
+
 ## 0.3.2 — 25.09.2026
 
 - Pencereler: kutuda basılı tutup dışarı sürükleyince pencere kapanıyordu; artık yalnız arka plana basıp bırakınca kapanır

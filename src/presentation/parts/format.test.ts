@@ -5,6 +5,7 @@ describe("sunum biçimleri (ABACUS)", () => {
   it("para her yerde ₺ ve kuruşlu", () => {
     expect(fmtMoney(2964627829)).toBe("₺29.646.278,29");
     expect(fmtMoney(null)).toBe("—");
+    expect(fmtMoney(0)).toBe("₺0,00");
   });
 
   it.each([

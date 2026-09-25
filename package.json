@@ -1,7 +1,7 @@
 {
   "name": "snn-siparis",
   "private": true,
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Eczane sipariş aracı — katalog, eczacı kazancı, PNG sipariş formu, WhatsApp",
   "type": "module",
   "engines": {

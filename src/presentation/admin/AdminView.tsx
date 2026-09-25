@@ -1,5 +1,6 @@
 import {
   Calculator01Icon,
+  ChartHistogramIcon,
   LockIcon,
   Logout01Icon,
   PackageIcon,
@@ -18,13 +19,16 @@ import type { Settings } from "../../domain/settings/settings.ts";
 import { Icon } from "../parts/parts.tsx";
 import { DataTab } from "./DataTab.tsx";
 import { PricingTab } from "./PricingTab.tsx";
+import { ReportsTab } from "./ReportsTab.tsx";
+import type { Order } from "../../domain/order/order.ts";
 import { ProductsTab } from "./ProductsTab.tsx";
 import { SettingsTab } from "./SettingsTab.tsx";
 import styles from "./admin.module.css";
 
-type Tab = "pricing" | "products" | "settings" | "data";
+type Tab = "reports" | "pricing" | "products" | "settings" | "data";
 
 const TABS: readonly { id: Tab; label: string; icon: typeof PackageIcon }[] = [
+  { id: "reports", label: "Raporlar", icon: ChartHistogramIcon },
   { id: "pricing", label: "Fiyatlama", icon: Calculator01Icon },
   { id: "products", label: "Ürünler", icon: PackageIcon },
   { id: "settings", label: "Ayarlar", icon: Settings02Icon },
@@ -33,6 +37,8 @@ const TABS: readonly { id: Tab; label: string; icon: typeof PackageIcon }[] = [
 
 export interface AdminProps {
   pricing: PricingState;
+  orders: readonly Order[];
+  today: string;
   settings: Settings;
   images: ImageMap;
   userImages: ImageMap;
@@ -52,7 +58,7 @@ export interface AdminProps {
 
 /** Yönetim: ayrı dünya — turuncu bant, "Yönetim modu" etiketi (PRD §5.1). */
 export function AdminView(props: AdminProps) {
-  const [tab, setTab] = useState<Tab>("pricing");
+  const [tab, setTab] = useState<Tab>("reports");
   return (
     <section className={styles.admin} aria-label="Yönetim">
       <div className={styles.adminBar}>
@@ -74,6 +80,15 @@ export function AdminView(props: AdminProps) {
           <Icon icon={Logout01Icon} size={16} /> Kilitle
         </button>
       </div>
+      {tab === "reports" && (
+        <ReportsTab
+          orders={props.orders}
+          catalog={props.pricing.catalog}
+          costs={props.pricing.costs}
+          today={props.today}
+          onGoPricing={() => setTab("pricing")}
+        />
+      )}
       {tab === "pricing" && (
         <PricingTab
           state={props.pricing}

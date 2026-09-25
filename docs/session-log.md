@@ -33,3 +33,13 @@
 - Lint kapısı: `window.confirm/alert/prompt` yasak; sabotaj denemesinde 2 kullanım yakalandı.
 - Ölçüm (375×812 çerçevede): katalog, sepet, siparişlerde taşma yok; alt gezinme tam genişlik.
 - SNN-Standartlar #110 başka oturumda birleşti; #109 açık, proje sahibinin onayını bekliyor.
+
+## 25.09.2026 — raporlar (v0.4.0)
+
+- Proje sahibi: yönetici için premium istatistik/rapor sayfası. Firebase şimdilik yok, MVP.
+- Arada iki düzeltme ayrı PR ile yayınlandı (v0.3.2): pencere sürüklemede kapanıyordu;
+  "Benim Alışım" / "Eczaneye Satışım" tanımları.
+- Başka oturum açık göründüğü için iş ayrı worktree'de (`../SNN-Siparis-reports`) yapıldı.
+- Grafikler kütüphanesiz SVG; dataviz kuralları (tek eksen, ≤24 px sütun, 2 px boşluk,
+  seçici etiket, fareyle ayrıntı). Amber yok: sıralamalar tek renk.
+- Ölçüm: 375 px çerçevede beş dönemde de taşma yok; 1280 px masaüstü ekran görüntüsüyle kontrol.
