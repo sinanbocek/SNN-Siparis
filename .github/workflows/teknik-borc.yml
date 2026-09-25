@@ -1,0 +1,34 @@
+# Her projeye kopyalanacak TEK dosya: .github/workflows/teknik-borc.yml
+# Kütük main'e ulaştığında (ve günde bir kez) ortak görevliyi çalıştırır.
+name: teknik-borc
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - docs/teknik-borc.md
+      - docs/teknik-borc-arsiv.md
+  schedule:
+    - cron: "17 4 * * *" # her gün 07:17 TSİ — kayma temizliği
+  workflow_dispatch:
+    inputs:
+      uygula:
+        description: "İşaretsizse yalnız kuru çalıştırma"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: teknik-borc
+  cancel-in-progress: false
+
+jobs:
+  senkron:
+    uses: sinanbocek/SNN-Standartlar/.github/workflows/debt-sync.yml@main
+    with:
+      apply: ${{ github.event_name != 'workflow_dispatch' || inputs.uygula }}
+    secrets:
+      PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}
