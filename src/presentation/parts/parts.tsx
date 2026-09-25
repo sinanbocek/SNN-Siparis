@@ -66,6 +66,7 @@ export function Stepper({
         placeholder="0"
         value={draft}
         onChange={(e) => setDraft(qtyInput(e.target.value))}
+        onFocus={(e) => e.currentTarget.select()}
         onBlur={(e) => commit(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Enter") (e.target as HTMLInputElement).blur();
@@ -256,6 +257,7 @@ function StepField({
         placeholder={placeholder}
         value={draft}
         className={styles.number}
+        onFocus={(e) => e.currentTarget.select()}
         onChange={(e) => {
           const step = moneyInputStep(draft, e.target.value);
           if (!step.ok) {

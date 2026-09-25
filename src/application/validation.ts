@@ -131,6 +131,9 @@ const isOrder: Guard<Order> = (v): v is Order =>
 export const isOrders: Guard<readonly Order[]> = arrayOf(isOrder);
 
 export const isMeta: Guard<Meta> = (v): v is Meta =>
-  isObject(v) && isString(v.installedAt) && nullable(isString)(v.lastBackupAt);
+  isObject(v) &&
+  isString(v.installedAt) &&
+  nullable(isString)(v.lastBackupAt) &&
+  (v.lastOrderNo === undefined || isString(v.lastOrderNo));
 
 export { isObject, isString, isInt, isNumber, nullable, arrayOf, type Guard };

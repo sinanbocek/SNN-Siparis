@@ -88,12 +88,12 @@ export function CatalogView({ catalog, settings, images, cart, onSetQty }: Props
               <span role="cell" className={styles.name}>
                 <b>{family.name}</b>
                 <small>{variant.name}</small>
-                <span className={styles.phonePrice}>
-                  <span>
-                    Eczaneye <b className="num">{fmtMoney(variant.saleMinor)}</b>
-                  </span>
-                  <span>Perakende Satış Fiyatı {psf}</span>
+              </span>
+              <span role="cell" className={styles.phonePrice}>
+                <span>
+                  Eczaneye <b className="num">{fmtMoney(variant.saleMinor)}</b>
                 </span>
+                <span>Perakende Satış Fiyatı {psf}</span>
               </span>
               <span role="cell" className={`num ${styles.colPrice} ${styles.price}`}>
                 {fmtMoney(variant.saleMinor)}

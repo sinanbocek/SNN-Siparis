@@ -14,8 +14,14 @@ import type {
   StoreError,
 } from "../../application/ports/stores.ts";
 import { istanbulDay, knownPharmacies } from "../../application/session.ts";
+import { writeAllOrNothing } from "../../application/transaction.ts";
 import { EMPTY_CART, pruneCart, setQty, summarizeCart, type Cart } from "../../domain/cart/cart.ts";
-import { findVariant, type Catalog, type Variant } from "../../domain/catalog/catalog.ts";
+import {
+  findVariant,
+  variantLabel,
+  type Catalog,
+  type Variant,
+} from "../../domain/catalog/catalog.ts";
 import {
   buildOrder,
   markShared,
@@ -165,9 +171,35 @@ function AppShell({ stores, seed, share, png, resizer, updates, now, admin }: Ap
     feedback.toast({ text: "Katalogdan kaldırılan ürünler sepetten çıkarıldı.", tone: "info" });
   }, [dropped, cart, updateCart, feedback]);
 
+  /**
+   * Sepet değişikliği; bir ürün sepetten çıktıysa (adet 0) 10 sn "Geri al" bildirimi
+   * (Baymard: silinen ürün geri alınabilmeli). Sepeti temizle kendi onayını kullanır.
+   */
+  const changeCart = (next: Cart) => {
+    const removed = cart.lines.filter(
+      (line) => !next.lines.some((n) => n.variantId === line.variantId),
+    );
+    updateCart(next);
+    if (removed.length === 0) return;
+    const previous = cart;
+    const first = removed[0];
+    const variant = first === undefined ? undefined : findVariant(catalog, first.variantId);
+    const name =
+      removed.length > 1
+        ? `${removed.length} ürün`
+        : variant
+          ? variantLabel(catalog, variant)
+          : "Ürün";
+    feedback.toast({
+      tone: "info",
+      text: `${name} sepetten çıkarıldı.`,
+      action: { label: "Geri al", onClick: () => updateCart(previous) },
+    });
+  };
+
   const onSetQty = (variant: Variant, qty: number) => {
     setResume(false);
-    updateCart(setQty(cart, variant, qty));
+    changeCart(setQty(cart, variant, qty));
   };
 
   const clearCart = async () => {
@@ -214,7 +246,10 @@ function AppShell({ stores, seed, share, png, resizer, updates, now, admin }: Ap
     }
     const createdAt = now();
     setCheckout({
-      no: nextOrderNo(settings.orderPrefix, istanbulDay(createdAt), orders),
+      no: nextOrderNo(settings.orderPrefix, istanbulDay(createdAt), [
+        ...orders.map((o) => o.no),
+        ...(meta.lastOrderNo === undefined ? [] : [meta.lastOrderNo]),
+      ]),
       createdAt,
     });
   };
@@ -229,6 +264,12 @@ function AppShell({ stores, seed, share, png, resizer, updates, now, admin }: Ap
     const previous = orders.find((o) => o.no === order.no);
     const shared = markShared(previous ? { ...order, shareCount: previous.shareCount } : order);
     saveOrders(upsertOrder(orders, shared));
+    if (!previous) {
+      // Verilen numarayı sakla: sipariş sonradan silinse de bu numara yeniden verilmez.
+      const nextMeta = { ...meta, lastOrderNo: order.no };
+      setMeta(nextMeta);
+      persist(stores.meta, nextMeta);
+    }
     updateCart(EMPTY_CART);
     setCheckout(null);
     setView(previous ? "orders" : "catalog");
@@ -438,7 +479,7 @@ function AppShell({ stores, seed, share, png, resizer, updates, now, admin }: Ap
             cart={cart}
             summary={summary}
             editingNo={editing === null ? null : editing.no}
-            onCartChange={updateCart}
+            onCartChange={changeCart}
             onClear={clearCart}
             onCheckout={openCheckout}
             onGoCatalog={() => setView("catalog")}
@@ -490,7 +531,41 @@ function AppShell({ stores, seed, share, png, resizer, updates, now, admin }: Ap
                     ? "Cihazda yer kalmadı; görsel kaydedilemedi. Başka görseli kaldırın."
                     : "Görsel kaydedilemedi.";
                 },
-                onOrdersReplace: saveOrders,
+                applyBackup: (backup) => {
+                  const images = backup.images;
+                  const error = writeAllOrNothing([
+                    {
+                      write: () => stores.settings.save(backup.settings),
+                      rollback: () => stores.settings.save(settings),
+                    },
+                    {
+                      write: () => stores.catalog.save(backup.catalog),
+                      rollback: () => stores.catalog.save(catalog),
+                    },
+                    {
+                      write: () => stores.orders.save(backup.orders),
+                      rollback: () => stores.orders.save(orders),
+                    },
+                    ...(images === null
+                      ? []
+                      : [
+                          {
+                            write: () => stores.images.save(images),
+                            rollback: () => stores.images.save(userImages),
+                          },
+                        ]),
+                  ]);
+                  if (error !== null) {
+                    return error === "quota"
+                      ? "Cihazda yer kalmadı; yedek yüklenmedi. Mevcut veri olduğu gibi korundu."
+                      : "Yedek yüklenemedi. Mevcut veri olduğu gibi korundu.";
+                  }
+                  setSettings(backup.settings);
+                  setCatalog(backup.catalog);
+                  setOrders(backup.orders);
+                  if (images !== null) setUserImages(images);
+                  return null;
+                },
                 onMetaChange: (next) => {
                   setMeta(next);
                   persist(stores.meta, next);
