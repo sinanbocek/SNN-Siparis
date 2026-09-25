@@ -66,6 +66,7 @@ Bu bölüm aşağıdaki metnin önüne geçer; çelişkide bu tablo geçerlidir.
 | K33 | Gezinme                    | Üst şerit koyu; telefonda alt gezinme tam genişlik, koyu, yüzen değil                                                                                                                                          |
 | K34 | Geri bildirim              | Tarayıcı `confirm/alert` yasak (lint); ortak onay penceresi ve bildirim (toast), "Geri al" düğmeli                                                                                                             |
 | K35 | Yedek uyarısı              | "Son yedek 7 günden eski" uyarısı kaldırıldı (D5 önlemi iptal); Veri sekmesinde yalnız son yedek tarihi görünür                                                                                                |
+| K36 | Tanımlar                   | Yönetimde "Maliyet" → **Benim Alışım**, "Satış fiyatı" → **Eczaneye Satışım**                                                                                                                                  |
 
 ---
 

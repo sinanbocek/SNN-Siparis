@@ -41,10 +41,12 @@ export function DataTab({
       message: [
         `${fmtStamp(sum.exportedAt, nowIso)} tarihli yedek:`,
         `${sum.families} ürün grubu, ${sum.variants} ürün,`,
-        sum.costs > 0 ? `${sum.costs} maliyet,` : "maliyet yok,",
+        sum.costs > 0 ? `${sum.costs} alış fiyatı,` : "alış fiyatı yok,",
         `${sum.orders} sipariş, ${sum.images} görsel.`,
         "Bu cihazdaki ürünler, fiyatlar, ayarlar ve siparişler yedektekiyle değiştirilecek.",
-        parsed.backup.costs === null ? "Yedekte maliyet yok; bu cihazdaki maliyetler korunur." : "",
+        parsed.backup.costs === null
+          ? "Yedekte alış fiyatı yok; bu cihazdaki alış fiyatlarınız korunur."
+          : "",
       ].join(" "),
       confirmLabel: "Yükle",
       danger: true,
@@ -71,7 +73,7 @@ export function DataTab({
             checked={withCosts}
             onChange={(e) => setWithCosts(e.target.checked)}
           />
-          Maliyetler dahil (dosya adında _MALIYETLI yazar; kimseyle paylaşmayın)
+          Alış fiyatlarım dahil (dosya adında _MALIYETLI yazar; kimseyle paylaşmayın)
         </label>
         <label className={styles.check}>
           <input
@@ -125,7 +127,7 @@ export function DataTab({
             const ok = await feedback.confirm({
               title: "Başlangıç verisine sıfırlansın mı?",
               message:
-                "Ürünler, fiyatlar, maliyetler ve görseller başlangıç verisine döner. Siparişler ve ayarlar kalır. Önce yedek almanızı öneririm.",
+                "Ürünler, fiyatlar, alış fiyatlarınız ve görseller başlangıç verisine döner. Siparişler ve ayarlar kalır. Önce yedek almanızı öneririm.",
               confirmLabel: "Sıfırla",
               danger: true,
             });
