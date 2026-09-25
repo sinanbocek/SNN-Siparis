@@ -1,0 +1,16 @@
+# Her projeye kopyalanacak TEK dosya: .github/workflows/anahtar-tarama.yml
+# Her PR'da ve main'e her gönderimde, EKLENEN satırlarda gizli anahtar arar. Bulursa kırmızı verir;
+# birleştirme kapısı (bilgisayardaki bekçi) kırmızı kontrollü PR'ın birleştirilmesine izin vermez.
+name: anahtar-tarama
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  tara:
+    uses: sinanbocek/SNN-Standartlar/.github/workflows/secret-scan.yml@main

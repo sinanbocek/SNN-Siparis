@@ -1,0 +1,17 @@
+# Her projeye kopyalanacak TEK dosya: .github/workflows/kod-dili.yml
+# Her PR'da ve main'e her gönderimde, EKLENEN satırlarda Türkçe tanımlayıcı arar. Bulursa kırmızı verir.
+# Yorumlar, dizgeler ve belgeler Türkçedir; taranmaz. Kural: SNN-Standartlar/standartlar/kod-dili-standardi.md
+# İstisna (Türkiye'ye özgü kavram, dış kaynağın alan adı): proje kökünde .snn-kod-dili.json — gerekçe zorunlu.
+name: kod-dili
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  tara:
+    uses: sinanbocek/SNN-Standartlar/.github/workflows/code-language.yml@main
