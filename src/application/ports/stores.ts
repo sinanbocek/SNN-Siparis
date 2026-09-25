@@ -33,6 +33,8 @@ export interface Meta {
   readonly installedAt: string;
   /** Son yedek alma zamanı (ISO); hiç alınmadıysa null (D5). */
   readonly lastBackupAt: string | null;
+  /** Bu cihazda verilmiş son sipariş numarası (silinse de yeniden verilmez). Eski kayıtlarda yok. */
+  readonly lastOrderNo?: string;
 }
 
 export interface SalesStores {

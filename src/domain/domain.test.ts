@@ -27,7 +27,7 @@ import {
   qtyInput,
   rateToInput,
 } from "./input/parse.ts";
-import { buildOrder, nextOrderNo, orderFileName, type Order } from "./order/order.ts";
+import { buildOrder, nextOrderNo, orderFileName } from "./order/order.ts";
 import { priceWarnings, psfFromSale, roundToStep } from "./pricing/pricing.ts";
 import { DEFAULT_SETTINGS } from "./settings/settings.ts";
 
@@ -237,11 +237,13 @@ describe("sepet hesabı", () => {
 });
 
 describe("sipariş", () => {
-  const stub = (no: string): Order => ({ no }) as Order;
-
   it("günlük sıra", () => {
     expect(nextOrderNo("VU", "2026-09-25", [])).toBe("VU-20260925-01");
-    expect(nextOrderNo("VU", "2026-09-25", [stub("VU-20260925-01"), stub("VU-20260924-07")])).toBe(
+    // -02 silindi ama daha önce verildi: yeniden verilmez
+    expect(nextOrderNo("VU", "2026-09-25", ["VU-20260925-01", "VU-20260925-02"])).toBe(
+      "VU-20260925-03",
+    );
+    expect(nextOrderNo("VU", "2026-09-25", ["VU-20260925-01", "VU-20260924-07"])).toBe(
       "VU-20260925-02",
     );
   });

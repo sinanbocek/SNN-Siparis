@@ -1,5 +1,18 @@
 # Değişiklik Günlüğü
 
+## 0.4.1 — 25.09.2026
+
+Satış ekranı dokunuş kalitesi ve iki doğruluk düzeltmesi (kod incelemesi + UI/UX araştırması).
+
+- Dokunma hedefleri 44 px (kutu, düğme, adet düğmesi, pencere kapatma); onay kutusu 20 px
+- Adet ve tutar kutusuna dokununca mevcut sayı seçilir ("1" yanına "2" → "12" olmaz)
+- Sepetten çıkan ürün (adet 0) için 10 sn "Geri al" bildirimi
+- Dikey tablette (≤ 860 px) eczacı kazanç şeridi görünür
+- 13 px altı yazı kalmadı (grafik eksenleri 12 px); kutu yazısı iPad dikeyde de 16 px
+- Telefonda katalog satırı: ad ve adet üstte, fiyatlar altta tam genişlik
+- Düzeltme: silinen siparişin numarası yeniden verilmez (son verilen numara cihazda saklanır)
+- Düzeltme: yedek yükleme ya hep ya hiç; hata olursa mevcut veri korunur, "yüklendi" denmez
+
 ## 0.4.0 — 25.09.2026
 
 - Yönetim → **Raporlar**: dönem seçimi ve önceki döneme göre değişim; ciro, kâr ve marj,

@@ -24,7 +24,8 @@ export interface AdminBase {
   onCatalogChange: (catalog: Catalog) => void;
   onSettingsChange: (settings: Settings) => void;
   onImagesChange: (images: ImageMap) => Promise<string | null>;
-  onOrdersReplace: (orders: readonly Order[]) => void;
+  /** Yedeği ya hep ya hiç yazar; hata olursa mevcut veri korunur ve mesaj döner. */
+  applyBackup: (backup: BackupFile) => string | null;
   onMetaChange: (meta: Meta) => void;
   onDownload: (blob: Blob, fileName: string) => void;
   resetSeed: () => void;
@@ -126,11 +127,22 @@ export default function AdminGate({ costStore, base }: AdminGateProps) {
   };
 
   const onImport = (backup: BackupFile): string | null => {
-    base.onSettingsChange(backup.settings);
-    base.onCatalogChange(backup.catalog);
-    base.onOrdersReplace(backup.orders);
-    if (backup.costs !== null) saveCosts(backup.costs);
-    if (backup.images !== null) void base.onImagesChange(backup.images);
+    // Alışlar ayrı depoda: önce onlar yazılır, sonra diğerleri; biri başarısızsa hepsi geri döner.
+    const previousCosts = costs;
+    if (backup.costs !== null) {
+      const saved = costStore.save(backup.costs);
+      if (!saved.ok) {
+        return saved.reason === "quota"
+          ? "Cihazda yer kalmadı; yedek yüklenmedi. Mevcut veri olduğu gibi korundu."
+          : "Yedek yüklenemedi. Mevcut veri olduğu gibi korundu.";
+      }
+    }
+    const error = base.applyBackup(backup);
+    if (error !== null) {
+      if (backup.costs !== null) costStore.save(previousCosts);
+      return error;
+    }
+    if (backup.costs !== null) setCosts(backup.costs);
     return null;
   };
 

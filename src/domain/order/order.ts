@@ -35,13 +35,17 @@ export interface Order {
   readonly updatedAt?: string;
 }
 
-/** Sipariş no: önek + gün + günlük sıra → VU-20260925-01. */
-export function nextOrderNo(prefix: string, day: string, existing: readonly Order[]): string {
+/**
+ * Sipariş no: önek + gün + günlük sıra → VU-20260925-01.
+ * `usedNos` kayıtlı siparişlerin numaraları ve daha önce verilmiş son numaradır: silinen
+ * siparişin numarası yeniden verilmez (depoda aynı numaralı iki resim olmasın).
+ */
+export function nextOrderNo(prefix: string, day: string, usedNos: readonly string[]): string {
   const compactDay = day.split("-").join("");
   const head = `${prefix}-${compactDay}-`;
-  const used = existing
-    .filter((o) => o.no.startsWith(head))
-    .map((o) => Number(o.no.slice(head.length)))
+  const used = usedNos
+    .filter((no) => no.startsWith(head))
+    .map((no) => Number(no.slice(head.length)))
     .filter((n) => Number.isSafeInteger(n));
   const highest = math.max(...used);
   const next = highest === null ? 1 : math.add(highest, 1);

@@ -2,7 +2,7 @@
 .stepper {
   display: inline-flex;
   align-items: stretch;
-  height: 36px;
+  height: 46px; /* çerçeve dahil; iç düğmeler 44 × 44 */
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
   background: var(--surface);
@@ -17,7 +17,7 @@
 .stepper button {
   display: grid;
   place-items: center;
-  width: 36px;
+  width: 44px;
   border: 0;
   background: transparent;
   color: var(--ink-2);
@@ -32,7 +32,7 @@
 }
 
 .stepper input {
-  width: 44px !important;
+  width: 52px !important;
   height: 100% !important;
   padding: 0 2px !important;
   border: 0 !important;
@@ -178,8 +178,8 @@ button.thumb:hover {
 .close {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -233,12 +233,12 @@ button.thumb:hover {
 
 .banner button {
   flex: none;
-  height: 30px;
+  height: 36px;
   padding: 0 12px;
   border: 1px solid currentColor;
   border-radius: var(--radius-sm);
   background: var(--surface);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -266,7 +266,7 @@ button.thumb:hover {
   display: block;
   margin-top: 4px;
   color: var(--warn);
-  font-size: 12px;
+  font-size: 13px;
   text-align: right;
 }
 

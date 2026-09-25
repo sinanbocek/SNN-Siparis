@@ -28,7 +28,7 @@
   --radius-sm: 8px;
   --radius: 10px;
   --radius-lg: 16px;
-  --control-h: 38px;
+  --control-h: 44px; /* dokunma hedefi: Apple 44 pt (araştırma §5.3) */
   --shadow-sm: 0 1px 2px rgb(16 24 40 / 5%);
   --shadow: 0 1px 3px rgb(16 24 40 / 6%), 0 1px 2px rgb(16 24 40 / 4%);
   --shadow-lg: 0 20px 48px -12px rgb(16 24 40 / 22%);
@@ -144,14 +144,15 @@ textarea::placeholder {
 }
 
 input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   margin: 0;
   accent-color: var(--ink);
   cursor: pointer;
 }
 
-@media (max-width: 700px) {
+/* iOS/iPadOS 16 px altı kutuda odaklanınca sayfayı yakınlaştırır; dikey iPad dahil. */
+@media (max-width: 1024px) {
   input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),
   select,
   textarea {
@@ -258,7 +259,7 @@ input[type="checkbox"] {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 32px;
+  height: 38px;
   padding: 0 14px;
   border: 0;
   border-radius: var(--radius-sm);
@@ -289,12 +290,12 @@ input[type="checkbox"] {
 
 .field > span:first-child {
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 500;
 }
 
 .hint {
   color: var(--mute);
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.4;
 }

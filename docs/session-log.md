@@ -43,3 +43,12 @@
 - Grafikler kütüphanesiz SVG; dataviz kuralları (tek eksen, ≤24 px sütun, 2 px boşluk,
   seçici etiket, fareyle ayrıntı). Amber yok: sıralamalar tek renk.
 - Ölçüm: 375 px çerçevede beş dönemde de taşma yok; 1280 px masaüstü ekran görüntüsüyle kontrol.
+
+## 25.09.2026 — dokunuş kalitesi ve doğruluk (v0.4.1)
+
+- Arka plan ajanıyla UI/UX araştırması (60+ bulgu, 40+ kaynak); kod incelemesi + SWOT.
+- Yapılan: araştırma P1'lerinden satış ekranı dokunuş kalitesi; incelemedeki iki doğruluk hatası.
+- Tipografi: araştırma gövdeyi 16 px öneriyor, proje sahibi daha önce "yazılar büyük" dedi;
+  gövde 14 px kaldı, yalnız 13 px altı yazılar 13 px'e çıkarıldı. Karar proje sahibinde.
+- Sabotaj denemeleri: numara testi eski davranışta kırmızı.
+- Ayarlar ekranı yeniden tasarım taslağı çizildi; proje sahibi onayı bekleniyor.

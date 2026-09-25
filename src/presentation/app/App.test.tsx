@@ -54,6 +54,29 @@ function setup(mem = new MemoryStorage()) {
 afterEach(cleanup);
 
 describe("saha akışı (C + D)", () => {
+  it("silinen siparişin numarası yeniden verilmez (-01 silinince yeni sipariş -02)", async () => {
+    const { mem, share } = setup();
+    const shareOnce = async (expected: string) => {
+      fireEvent.click(screen.getByRole("button", { name: "Gardegen 60 Kapsül artır" }));
+      fireEvent.click(screen.getAllByRole("button", { name: /^Sepet/ })[0]!);
+      fireEvent.click(screen.getByRole("button", { name: /Siparişi tamamla/ }));
+      fireEvent.change(screen.getByRole("combobox", { name: /Eczane adı/ }), {
+        target: { value: "Şifa Eczanesi" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: /WhatsApp ile paylaş/ }));
+      await waitFor(() => expect(mem.getItem("snn-siparis.orders")).toContain(expected));
+    };
+    await shareOnce("VU-20260925-01");
+    fireEvent.click(screen.getAllByRole("button", { name: /Siparişler/ })[0]!);
+    fireEvent.click(screen.getByRole("button", { name: "VU-20260925-01 sil" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Sipariş silinsin mi?" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Sil" }));
+    await waitFor(() => expect(mem.getItem("snn-siparis.orders")).toContain('"data":[]'));
+    fireEvent.click(screen.getAllByRole("button", { name: /Katalog/ })[0]!);
+    await shareOnce("VU-20260925-02");
+    expect(vi.mocked(share.sharePng).mock.calls[1]![1]).toContain("VU-20260925-02");
+  });
+
   it("katalogdan adet → sepette eczacı kazancı → paylaş → geçmiş", async () => {
     const { mem, share } = setup();
     fireEvent.click(screen.getAllByRole("button", { name: "Gardegen 60 Kapsül artır" })[0]!);
@@ -111,6 +134,17 @@ describe("saha akışı (C + D)", () => {
 });
 
 describe("revizyon 2", () => {
+  it("sepette − ile sıfıra inen ürün 'Geri al' ile geri gelir", async () => {
+    const { mem } = setup();
+    fireEvent.click(screen.getByRole("button", { name: "Gardegen 60 Kapsül artır" }));
+    fireEvent.click(screen.getAllByRole("button", { name: /^Sepet/ })[0]!);
+    fireEvent.click(screen.getByRole("button", { name: "Gardegen 60 Kapsül azalt" }));
+    expect(await screen.findByText("Gardegen 60 Kapsül sepetten çıkarıldı.")).toBeTruthy();
+    await waitFor(() => expect(mem.getItem("snn-siparis.cart")).toContain('"lines":[]'));
+    fireEvent.click(screen.getByRole("button", { name: "Geri al" }));
+    await waitFor(() => expect(mem.getItem("snn-siparis.cart")).toContain("gardegen-60"));
+  });
+
   it("eczane adında boşluk yazılabilir; telefon yalnız rakam", () => {
     setup();
     fireEvent.click(screen.getByRole("button", { name: "Gardegen 60 Kapsül artır" }));

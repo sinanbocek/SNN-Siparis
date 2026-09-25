@@ -287,6 +287,7 @@ function MfInput({
       inputMode="numeric"
       placeholder="—"
       value={shown}
+      onFocus={(e) => e.currentTarget.select()}
       onChange={(e) => setDraft(qtyInput(e.target.value))}
       onBlur={() => {
         if (draft !== null) {
