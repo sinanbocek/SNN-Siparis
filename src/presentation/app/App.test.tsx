@@ -63,9 +63,9 @@ describe("saha akışı (C + D)", () => {
 
     fireEvent.click(screen.getAllByRole("button", { name: /^Sepet/ })[0]!);
     const panel = screen.getByRole("complementary", { name: "Eczane kazancı" });
-    expect(within(panel).getByText("20.000 TL")).toBeTruthy();
-    expect(within(panel).getByText("24.000 TL")).toBeTruthy();
-    expect(within(panel).getByText("4.000 TL")).toBeTruthy();
+    expect(within(panel).getByText("₺20.000,00")).toBeTruthy();
+    expect(within(panel).getByText("₺24.000,00")).toBeTruthy();
+    expect(within(panel).getByText("₺4.000,00")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: /Siparişi tamamla/ }));
     const shareButton = screen.getByRole("button", { name: /WhatsApp ile paylaş/ });
@@ -111,16 +111,89 @@ describe("saha akışı (C + D)", () => {
 });
 
 describe("yönetim", () => {
-  it("şifre 0 ile açılır, yanlışta açılmaz", async () => {
+  it("şifre kendiliğinden denenir: yanlışta açılmaz, 0 ile açılır; telefonda rakam klavyesi", async () => {
     setup();
     fireEvent.click(screen.getByRole("button", { name: "Yönetim" }));
     const pass = await screen.findByLabelText("Şifre");
+    expect(pass.getAttribute("inputmode")).toBe("numeric");
     fireEvent.change(pass, { target: { value: "1" } });
-    fireEvent.click(screen.getByRole("button", { name: "Aç" }));
     expect(screen.getByText("Şifre yanlış.")).toBeTruthy();
     fireEvent.change(screen.getByLabelText("Şifre"), { target: { value: "0" } });
-    fireEvent.click(screen.getByRole("button", { name: "Aç" }));
-    expect(await screen.findByText("Yönetim modu")).toBeTruthy();
+    expect(await screen.findByText("Yönetim")).toBeTruthy();
+    expect(screen.getByRole("navigation", { name: "Yönetim sekmeleri" })).toBeTruthy();
+  });
+});
+
+describe("sipariş düzenle / sil", () => {
+  const order = {
+    no: "VU-20260925-01",
+    createdAt: "2026-09-25T08:00:00.000Z",
+    day: "2026-09-25",
+    pharmacy: { name: "Deva Eczanesi", district: "", address: "", phone: "" },
+    note: "",
+    repName: "Volkan ULU",
+    repPhone: "0 555 555 55 55",
+    headerTitle: "Sipariş Formu",
+    lines: [
+      {
+        variantId: "magmeda-60",
+        label: "Magmeda-6 60 Kapsül",
+        qty: 3,
+        mf: 0,
+        unitMinor: 45800,
+        amountMinor: 137400,
+        vatRate: 0.01,
+      },
+    ],
+    netMinor: 137400,
+    vatGroups: [{ rate: 0.01, baseMinor: 137400, vatMinor: 1374 }],
+    grossMinor: 138774,
+    status: "shared",
+    shareCount: 1,
+  };
+
+  function withOrder() {
+    const mem = new MemoryStorage();
+    mem.setItem("snn-siparis.orders", JSON.stringify({ version: 1, data: [order] }));
+    return setup(mem);
+  }
+
+  it("liste Abacus biçimiyle: ₺ tutar ve '25 Eyl. 11:00'", () => {
+    withOrder();
+    fireEvent.click(screen.getAllByRole("button", { name: /Siparişler/ })[0]!);
+    expect(screen.getByText("₺1.387,74")).toBeTruthy();
+    expect(screen.getByText(/VU-20260925-01 · 25 Eyl\. 11:00/)).toBeTruthy();
+  });
+
+  it("sil: onayla kayıttan çıkar", () => {
+    const { mem } = withOrder();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    fireEvent.click(screen.getAllByRole("button", { name: /Siparişler/ })[0]!);
+    fireEvent.click(screen.getByRole("button", { name: "VU-20260925-01 sil" }));
+    expect(mem.getItem("snn-siparis.orders")).toContain('"data":[]');
+  });
+
+  it("düzenle: aynı numarayla sepete açılır, paylaşınca aynı kayıt güncellenir", async () => {
+    const { mem, share } = withOrder();
+    fireEvent.click(screen.getAllByRole("button", { name: /Siparişler/ })[0]!);
+    fireEvent.click(screen.getByRole("button", { name: /Deva Eczanesi/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Düzenle/ }));
+    expect(
+      screen.getByText("VU-20260925-01 düzenleniyor. Paylaşınca kayıt güncellenir."),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Magmeda-6 60 Kapsül artır" }));
+    fireEvent.click(screen.getByRole("button", { name: "Siparişi güncelle" }));
+    fireEvent.click(screen.getByRole("button", { name: /WhatsApp ile paylaş/ }));
+    await waitFor(() => expect(share.sharePng).toHaveBeenCalledOnce());
+    await waitFor(() => expect(mem.getItem("snn-siparis.orders")).toContain('"qty":4'));
+    const saved = JSON.parse(mem.getItem("snn-siparis.orders")!).data;
+    expect(saved).toHaveLength(1);
+    expect(saved[0]).toMatchObject({
+      no: "VU-20260925-01",
+      shareCount: 2,
+      createdAt: order.createdAt,
+    });
+    expect(saved[0].updatedAt).toBe("2026-09-25T10:00:00.000Z");
   });
 });
 

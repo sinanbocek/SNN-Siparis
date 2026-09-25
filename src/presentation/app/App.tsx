@@ -16,11 +16,18 @@ import type {
 import { istanbulDay, knownPharmacies } from "../../application/session.ts";
 import { EMPTY_CART, pruneCart, setQty, summarizeCart, type Cart } from "../../domain/cart/cart.ts";
 import { findVariant, type Catalog, type Variant } from "../../domain/catalog/catalog.ts";
-import { buildOrder, markShared, nextOrderNo, type Order } from "../../domain/order/order.ts";
+import {
+  buildOrder,
+  markShared,
+  nextOrderNo,
+  removeOrder,
+  upsertOrder,
+  type Order,
+} from "../../domain/order/order.ts";
 import type { Settings } from "../../domain/settings/settings.ts";
 import { Banner, Icon } from "../parts/parts.tsx";
 import { CartView } from "../sales/CartView.tsx";
-import { CatalogView, type CatalogMode } from "../sales/CatalogView.tsx";
+import { CatalogView } from "../sales/CatalogView.tsx";
 import { CheckoutDialog } from "../sales/CheckoutDialog.tsx";
 import { OrdersView } from "../sales/OrdersView.tsx";
 import type { AdminGateProps } from "../admin/AdminGate.tsx";
@@ -62,14 +69,27 @@ function loadOr<T>(store: DocumentStore<T>, fallback: T): Loaded<T> {
   return { value: result.value, error: null };
 }
 
-const VIEW_KEY = "snn-siparis.ui.catalog-mode";
-
-function readMode(): CatalogMode {
-  try {
-    return window.localStorage.getItem(VIEW_KEY) === "list" ? "list" : "cards";
-  } catch {
-    return "cards";
+/** Sipariş satırlarını güncel fiyatlarla sepete koyar; katalogda olmayanları sayar. */
+function cartFromOrder(catalog: Catalog, order: Order): { cart: Cart; missing: number } {
+  let cart: Cart = { ...EMPTY_CART, pharmacy: order.pharmacy, note: order.note };
+  let missing = 0;
+  for (const line of order.lines) {
+    const variant = findVariant(catalog, line.variantId);
+    if (!variant || !variant.active || variant.saleMinor === null) {
+      missing += 1;
+      continue;
+    }
+    cart = setQty(cart, variant, line.qty);
+    if (line.mf > 0) {
+      cart = {
+        ...cart,
+        lines: cart.lines.map((l) =>
+          l.variantId === variant.id ? { ...l, mfOverride: line.mf } : l,
+        ),
+      };
+    }
   }
+  return { cart, missing };
 }
 
 export function App({ stores, seed, share, png, resizer, updates, now, admin }: AppProps) {
@@ -98,7 +118,6 @@ export function App({ stores, seed, share, png, resizer, updates, now, admin }: 
       .find((e) => e !== null) ?? null,
   );
   const [view, setView] = useState<View>("catalog");
-  const [mode, setMode] = useState<CatalogMode>(readMode);
   const [checkout, setCheckout] = useState<{ no: string; createdAt: string } | null>(null);
   const [resume, setResume] = useState(initial.cart.value.lines.length > 0);
   const [undo, setUndo] = useState<Cart | null>(null);
@@ -119,7 +138,8 @@ export function App({ stores, seed, share, png, resizer, updates, now, admin }: 
 
   const images = useMemo(() => ({ ...seed.images, ...userImages }), [seed.images, userImages]);
   const summary = useMemo(() => summarizeCart(catalog, settings, cart), [catalog, settings, cart]);
-  const today = istanbulDay(now());
+  const nowIso = now();
+  const today = istanbulDay(nowIso);
 
   const updateCart = useCallback(
     (next: Cart) => {
@@ -156,6 +176,8 @@ export function App({ stores, seed, share, png, resizer, updates, now, admin }: 
     undoTimer.current = window.setTimeout(() => setUndo(null), 10_000);
   };
 
+  const editing = cart.editing === undefined ? null : cart.editing;
+
   const draftOrder = useMemo(() => {
     if (checkout === null) return null;
     return buildOrder(
@@ -168,12 +190,17 @@ export function App({ stores, seed, share, png, resizer, updates, now, admin }: 
         repName: settings.repName,
         repPhone: settings.repPhone,
         headerTitle: settings.headerTitle,
+        ...(editing !== null && { updatedAt: nowIso }),
       },
       summary,
     );
-  }, [checkout, cart.pharmacy, cart.note, settings, summary]);
+  }, [checkout, cart.pharmacy, cart.note, settings, summary, editing, nowIso]);
 
   const openCheckout = () => {
+    if (editing !== null) {
+      setCheckout({ no: editing.no, createdAt: editing.createdAt });
+      return;
+    }
     const createdAt = now();
     setCheckout({
       no: nextOrderNo(settings.orderPrefix, istanbulDay(createdAt), orders),
@@ -186,81 +213,87 @@ export function App({ stores, seed, share, png, resizer, updates, now, admin }: 
     persist(stores.orders, next);
   };
 
-  const onShared = (order: Order) => {
-    const existing = orders.find((o) => o.no === order.no);
-    const shared = markShared(existing ?? order);
-    saveOrders(
-      existing ? orders.map((o) => (o.no === order.no ? shared : o)) : [...orders, shared],
-    );
-    if (!existing) {
-      updateCart(EMPTY_CART);
-      setCheckout(null);
-      setView("catalog");
-      setToast(`${order.no} paylaşıldı. Sepet yeni eczane için boşaltıldı.`);
-    }
-  };
-
-  const copyToCart = (order: Order) => {
-    if (cart.lines.length > 0 && !window.confirm("Açık sepet bu siparişle değiştirilsin mi?"))
-      return;
-    let next: Cart = { ...EMPTY_CART, pharmacy: order.pharmacy, note: "" };
-    let missing = 0;
-    for (const line of order.lines) {
-      const variant = findVariant(catalog, line.variantId);
-      if (!variant || !variant.active || variant.saleMinor === null) {
-        missing += 1;
-        continue;
-      }
-      next = setQty(next, variant, line.qty);
-    }
-    updateCart(next);
-    setView("cart");
+  /** Tamamla penceresinden paylaşıldı: yeni ya da düzenlenen sipariş kaydedilir, sepet boşalır. */
+  const onCheckoutShared = (order: Order) => {
+    const previous = orders.find((o) => o.no === order.no);
+    const shared = markShared(previous ? { ...order, shareCount: previous.shareCount } : order);
+    saveOrders(upsertOrder(orders, shared));
+    updateCart(EMPTY_CART);
+    setCheckout(null);
+    setView(previous ? "orders" : "catalog");
     setToast(
-      missing > 0
-        ? `${missing} ürün artık katalogda yok; kalanlar güncel fiyatla sepete alındı.`
-        : "Sipariş güncel fiyatlarla sepete alındı.",
+      previous
+        ? `${order.no} güncellendi ve paylaşıldı.`
+        : `${order.no} paylaşıldı. Sepet yeni eczane için boşaltıldı.`,
     );
   };
 
-  const changeMode = (next: CatalogMode) => {
-    setMode(next);
-    try {
-      window.localStorage.setItem(VIEW_KEY, next);
-    } catch {
-      /* görünüm tercihi yalnız kolaylık */
+  /** Geçmişten yeniden paylaşıldı: yalnız sayaç ve durum. */
+  const onReshared = (order: Order) => {
+    saveOrders(upsertOrder(orders, markShared(order)));
+  };
+
+  const loadOrderIntoCart = (order: Order, asEdit: boolean) => {
+    if (cart.lines.length > 0 && !window.confirm("Açık sepet bu siparişle değiştirilsin mi?")) {
+      return;
     }
+    const { cart: next, missing } = cartFromOrder(catalog, order);
+    updateCart(
+      asEdit
+        ? { ...next, editing: { no: order.no, createdAt: order.createdAt } }
+        : { ...next, note: "" },
+    );
+    setResume(false);
+    setView("cart");
+    const lead = asEdit
+      ? `${order.no} düzenleniyor; güncel fiyatlar kullanılır.`
+      : "Sipariş güncel fiyatlarla sepete alındı.";
+    setToast(missing > 0 ? `${lead} ${missing} ürün artık katalogda yok.` : lead);
+  };
+
+  const deleteOrder = (order: Order) => {
+    saveOrders(removeOrder(orders, order.no));
+    if (editing !== null && editing.no === order.no) {
+      const { editing: _dropped, ...rest } = cart;
+      updateCart(rest);
+    }
+    setToast(`${order.no} silindi.`);
   };
 
   const cartCount = summary.lines.length;
   const unavailable = storeError === "unavailable";
 
+  const nav: readonly { id: View; label: string; icon: typeof GridViewIcon; badge?: number }[] = [
+    { id: "catalog", label: "Katalog", icon: GridViewIcon },
+    { id: "cart", label: "Sepet", icon: ShoppingBasket01Icon, badge: cartCount },
+    { id: "orders", label: "Siparişler", icon: Task01Icon },
+  ];
+
   return (
     <div className={styles.shell}>
       <header className={styles.top}>
-        <span className={styles.brand}>{settings.repName}</span>
-        <nav className={styles.nav} aria-label="Ana gezinme">
-          <NavButton
-            current={view}
-            id="catalog"
-            label="Katalog"
-            icon={GridViewIcon}
-            onGo={setView}
-          />
-          <NavButton
-            current={view}
-            id="cart"
-            label="Sepet"
-            icon={ShoppingBasket01Icon}
-            onGo={setView}
-            badge={cartCount}
-          />
-          <NavButton
-            current={view}
-            id="orders"
-            label="Siparişler"
-            icon={Task01Icon}
-            onGo={setView}
-          />
+        <div className={styles.brand}>
+          <span className={styles.logo} aria-hidden="true">
+            <Icon icon={ShoppingBasket01Icon} size={16} />
+          </span>
+          <span className={styles.brandText}>
+            <b>SNN Sipariş</b>
+            <small>{settings.repName}</small>
+          </span>
+        </div>
+        <nav className={`tabs ${styles.nav}`} aria-label="Ana gezinme">
+          {nav.map((n) => (
+            <button
+              key={n.id}
+              type="button"
+              aria-current={view === n.id ? "page" : undefined}
+              onClick={() => setView(n.id)}
+            >
+              <Icon icon={n.icon} size={16} />
+              <span>{n.label}</span>
+              {n.badge !== undefined && n.badge > 0 && <b className={styles.badge}>{n.badge}</b>}
+            </button>
+          ))}
         </nav>
         <button
           type="button"
@@ -268,7 +301,7 @@ export function App({ stores, seed, share, png, resizer, updates, now, admin }: 
           aria-label="Yönetim"
           onClick={() => setView("admin")}
         >
-          <Icon icon={Settings02Icon} size={22} />
+          <Icon icon={Settings02Icon} size={18} />
         </button>
       </header>
 
@@ -314,7 +347,26 @@ export function App({ stores, seed, share, png, resizer, updates, now, admin }: 
           Yeni sürüm hazır. Sepet ve tüm veri korunur.
         </Banner>
       )}
-      {resume && view !== "admin" && (
+      {editing !== null && view !== "admin" && (
+        <Banner
+          tone="info"
+          action={
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm("Düzenleme bırakılsın mı? Kayıtlı sipariş değişmez.")) {
+                  updateCart(EMPTY_CART);
+                }
+              }}
+            >
+              Düzenlemeyi bırak
+            </button>
+          }
+        >
+          {editing.no} düzenleniyor. Paylaşınca kayıt güncellenir.
+        </Banner>
+      )}
+      {resume && editing === null && view !== "admin" && (
         <Banner
           tone="info"
           action={
@@ -371,8 +423,6 @@ export function App({ stores, seed, share, png, resizer, updates, now, admin }: 
             settings={settings}
             images={images}
             cart={cart}
-            mode={mode}
-            onModeChange={changeMode}
             onSetQty={onSetQty}
           />
         )}
@@ -381,6 +431,7 @@ export function App({ stores, seed, share, png, resizer, updates, now, admin }: 
             catalog={catalog}
             cart={cart}
             summary={summary}
+            editingNo={editing === null ? null : editing.no}
             onCartChange={updateCart}
             onClear={clearCart}
             onCheckout={openCheckout}
@@ -391,10 +442,13 @@ export function App({ stores, seed, share, png, resizer, updates, now, admin }: 
           <OrdersView
             orders={orders}
             today={today}
+            nowIso={nowIso}
             share={share}
             png={png}
-            onShared={onShared}
-            onCopyToCart={copyToCart}
+            onReshared={onReshared}
+            onCopyToCart={(o) => loadOrderIntoCart(o, false)}
+            onEdit={(o) => loadOrderIntoCart(o, true)}
+            onDelete={deleteOrder}
           />
         )}
         {view === "admin" && (
@@ -449,9 +503,9 @@ export function App({ stores, seed, share, png, resizer, updates, now, admin }: 
         )}
       </main>
 
-      {view !== "admin" && view !== "cart" && cartCount > 0 && (
+      {view === "catalog" && cartCount > 0 && (
         <button type="button" className={styles.cartFab} onClick={() => setView("cart")}>
-          <Icon icon={ShoppingBasket01Icon} /> Sepet · {cartCount} ürün
+          <Icon icon={ShoppingBasket01Icon} size={16} /> Sepet · {cartCount} ürün
         </button>
       )}
 
@@ -464,44 +518,16 @@ export function App({ stores, seed, share, png, resizer, updates, now, admin }: 
       {checkout !== null && draftOrder !== null && (
         <CheckoutDialog
           order={draftOrder}
+          editing={editing !== null}
           suggestions={knownPharmacies(orders)}
           share={share}
           png={png}
           onPharmacyChange={(pharmacy) => updateCart({ ...cart, pharmacy })}
           onNoteChange={(note) => updateCart({ ...cart, note })}
-          onShared={onShared}
+          onShared={onCheckoutShared}
           onClose={() => setCheckout(null)}
         />
       )}
     </div>
-  );
-}
-
-function NavButton({
-  current,
-  id,
-  label,
-  icon,
-  onGo,
-  badge,
-}: {
-  current: View;
-  id: View;
-  label: string;
-  icon: typeof GridViewIcon;
-  onGo: (view: View) => void;
-  badge?: number;
-}) {
-  return (
-    <button
-      type="button"
-      className={current === id ? `${styles.navButton} ${styles.navOn}` : styles.navButton}
-      aria-current={current === id ? "page" : undefined}
-      onClick={() => onGo(id)}
-    >
-      <Icon icon={icon} size={20} />
-      <span>{label}</span>
-      {badge !== undefined && badge > 0 && <b className={styles.badge}>{badge}</b>}
-    </button>
   );
 }

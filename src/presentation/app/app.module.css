@@ -4,84 +4,109 @@
   flex-direction: column;
 }
 
+/* üst şerit: ihale .topbar */
 .top {
   position: sticky;
   top: 0;
   z-index: 20;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 12px;
-  padding: 0 12px;
-  padding-top: env(safe-area-inset-top);
-  min-height: 60px;
-  background: var(--nav);
-  color: #fff;
+  min-height: 56px;
+  padding: calc(8px + env(safe-area-inset-top)) max(20px, calc((100vw - 1280px) / 2)) 8px;
+  background: rgb(255 255 255 / 88%);
+  backdrop-filter: saturate(180%) blur(10px);
+  border-bottom: 1px solid var(--line);
 }
 
 .brand {
-  font-weight: 700;
-  font-size: 17px;
-  min-width: 140px;
-}
-
-.nav {
-  flex: 1;
   display: flex;
-  justify-content: center;
-  gap: 6px;
-}
-
-.navButton {
-  position: relative;
-  min-height: 46px;
-  padding: 0 18px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: rgb(255 255 255 / 78%);
-  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 500;
-  font-size: 16px;
+  gap: 10px;
+  min-width: 0;
 }
 
-.navOn {
-  background: rgb(255 255 255 / 14%);
+.logo {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius);
+  background: var(--ink);
   color: #fff;
+  box-shadow: var(--shadow);
+}
+
+.brandText {
+  display: grid;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.brandText b {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.brandText small {
+  color: var(--mute);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav > button {
+  position: relative;
 }
 
 .badge {
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: #fff;
-  color: var(--nav);
-  font-size: 13px;
   display: inline-grid;
   place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .gear {
-  width: 44px;
-  height: 44px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: rgb(255 255 255 / 60%);
+  justify-self: end;
   display: grid;
   place-items: center;
+  width: var(--control-h);
+  height: var(--control-h);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+
+.gear:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .gearOn {
-  background: var(--admin);
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+}
+
+.gearOn:hover {
   color: #fff;
 }
 
 .main {
   flex: 1;
-  padding-bottom: 90px;
+  padding-bottom: 88px;
 }
 
 .bannerActions {
@@ -91,82 +116,90 @@
 
 .loading {
   padding: 40px;
-  text-align: center;
   color: var(--mute);
+  text-align: center;
 }
 
 .cartFab {
   position: fixed;
-  right: 16px;
-  bottom: calc(16px + env(safe-area-inset-bottom));
+  right: 20px;
+  bottom: calc(20px + env(safe-area-inset-bottom));
   z-index: 15;
-  min-height: 56px;
-  padding: 0 22px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--accent);
-  color: #fff;
-  font-weight: 600;
-  font-size: 16px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
   box-shadow: var(--shadow-lg);
 }
 
 .toast {
   position: fixed;
   left: 50%;
-  bottom: calc(86px + env(safe-area-inset-bottom));
-  transform: translateX(-50%);
+  bottom: calc(76px + env(safe-area-inset-bottom));
   z-index: 60;
-  max-width: min(560px, calc(100% - 32px));
+  max-width: min(520px, calc(100% - 32px));
+  padding: 10px 16px;
+  border-radius: var(--radius);
   background: var(--ink);
   color: #fff;
-  padding: 12px 18px;
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-lg);
+  font-size: 13px;
   font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  transform: translateX(-50%);
 }
 
 /* telefon: gezinme alta iner (başparmak erişimi) */
 @media (max-width: 700px) {
-  .brand {
-    min-width: 0;
-    flex: 1;
+  /* backdrop-filter, içindeki fixed gezinmeyi şeride bağlar; telefonda kapalı. */
+  .top {
+    grid-template-columns: 1fr auto;
+    padding-left: 12px;
+    padding-right: 12px;
+    background: var(--surface);
+    backdrop-filter: none;
   }
 
   .nav {
     position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    left: 8px;
+    right: 8px;
+    bottom: calc(8px + env(safe-area-inset-bottom));
     z-index: 20;
-    background: var(--nav);
-    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
-    justify-content: space-around;
-    gap: 0;
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr);
+    background: rgb(238 240 244 / 96%) !important;
+    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-lg);
   }
 
-  .navButton {
+  .nav > button {
     flex-direction: column;
-    gap: 2px;
-    padding: 4px 10px;
-    font-size: 12px;
-    flex: 1;
+    justify-content: center;
+    gap: 2px !important;
+    height: 48px !important;
+    padding: 0 !important;
+    font-size: 11.5px !important;
   }
 
-  .badge {
+  .nav .badge {
     position: absolute;
-    top: 0;
-    right: 18%;
+    top: 4px;
+    left: calc(50% + 6px);
   }
 
   .cartFab {
-    bottom: calc(80px + env(safe-area-inset-bottom));
+    right: 12px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
   }
 
   .toast {
-    bottom: calc(150px + env(safe-area-inset-bottom));
+    bottom: calc(132px + env(safe-area-inset-bottom));
   }
 }

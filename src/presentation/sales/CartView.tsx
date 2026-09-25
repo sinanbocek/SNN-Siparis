@@ -10,8 +10,8 @@ import {
   type LineSummary,
 } from "../../domain/cart/cart.ts";
 import { findVariant, type Catalog } from "../../domain/catalog/catalog.ts";
-import { parseQtyInput } from "../../domain/input/parse.ts";
-import { fmtAmount, fmtMoney, fmtMoneyText, fmtRate } from "../parts/format.ts";
+import { parseQtyInput, qtyInput } from "../../domain/input/parse.ts";
+import { fmtMoney, fmtRate } from "../parts/format.ts";
 import { Icon, RateField, Stepper } from "../parts/parts.tsx";
 import styles from "./sales.module.css";
 
@@ -19,6 +19,7 @@ interface Props {
   catalog: Catalog;
   cart: Cart;
   summary: CartSummary;
+  editingNo: string | null;
   onCartChange: (cart: Cart) => void;
   onClear: () => void;
   onCheckout: () => void;
@@ -32,6 +33,7 @@ export function CartView({
   catalog,
   cart,
   summary,
+  editingNo,
   onCartChange,
   onClear,
   onCheckout,
@@ -40,10 +42,10 @@ export function CartView({
   if (summary.lines.length === 0) {
     return (
       <section className={styles.page}>
-        <div className={styles.emptyCart}>
+        <div className={`card ${styles.emptyCart}`}>
           <h2>Sepet boş</h2>
           <p>Katalogdan adet girin; burada eczacının ödeyeceği ve kazanacağı tutar görünür.</p>
-          <button type="button" className={styles.primary} onClick={onGoCatalog}>
+          <button type="button" className="btnPrimary" onClick={onGoCatalog}>
             Kataloğa git
           </button>
         </div>
@@ -68,19 +70,26 @@ export function CartView({
       <div className={styles.strip} aria-label="Eczane kazancı özeti">
         <div>
           <span>Ödersiniz</span>
-          <b className="num">{fmtMoneyText(summary.netMinor)}</b>
+          <b className="num">{fmtMoney(summary.netMinor)}</b>
         </div>
         <div>
-          <span>Kazanırsınız</span>
-          <b className={`num ${styles.goodText}`}>{fmtMoneyText(summary.pharmacistProfitMinor)}</b>
+          <span>Kazanırsınız · {fmtRate(summary.pharmacistRate)}</span>
+          <b className={`num ${styles.goodText}`}>{fmtMoney(summary.pharmacistProfitMinor)}</b>
         </div>
-        <em>{fmtRate(summary.pharmacistRate)}</em>
       </div>
 
       <div className={styles.cartLayout}>
-        <div className={styles.cartTableWrap}>
-          <div className={styles.cartTable} role="table" aria-label="Sepet satırları">
-            <div className={`${styles.cartRow} ${styles.cartHead}`} role="row">
+        <div className={`card ${styles.cartCard}`}>
+          <div className={styles.cardHead}>
+            <h2>Sepet</h2>
+            <span className={styles.muted}>
+              {editingNo !== null ? `${editingNo} düzenleniyor · ` : ""}
+              {`${summary.lines.length} ürün · ${summary.qtyTotal} kutu`}
+              {summary.mfTotal > 0 ? ` + ${summary.mfTotal} MF` : ""}
+            </span>
+          </div>
+          <div role="table" aria-label="Sepet satırları">
+            <div className={`${styles.cartRow} ${styles.head}`} role="row">
               <span role="columnheader">Ürün</span>
               <span role="columnheader" className="num">
                 Birim
@@ -115,50 +124,59 @@ export function CartView({
           </div>
 
           <dl className={styles.totals}>
-            <dt>Toplam (KDV hariç)</dt>
-            <dd className="num">{fmtMoney(summary.netMinor)}</dd>
+            <div>
+              <dt>Toplam (KDV hariç)</dt>
+              <dd className="num">{fmtMoney(summary.netMinor)}</dd>
+            </div>
             {summary.vatGroups.map((g) => (
-              <div key={g.rate} className={styles.totalsRow}>
+              <div key={g.rate}>
                 <dt>KDV ({fmtRate(g.rate, 0)})</dt>
                 <dd className="num">{fmtMoney(g.vatMinor)}</dd>
               </div>
             ))}
-            <dt className={styles.grand}>Genel toplam (KDV dahil)</dt>
-            <dd className={`num ${styles.grand}`}>{fmtMoney(summary.grossMinor)}</dd>
+            <div className={styles.grand}>
+              <dt>Genel toplam (KDV dahil)</dt>
+              <dd className="num">{fmtMoney(summary.grossMinor)}</dd>
+            </div>
           </dl>
 
-          <div className={styles.cartActions}>
-            <button type="button" className={styles.ghost} onClick={onClear}>
-              <Icon icon={Delete02Icon} size={18} /> Sepeti temizle
+          <div className={styles.cardFoot}>
+            <button type="button" className="btn" onClick={onClear}>
+              <Icon icon={Delete02Icon} size={16} /> Sepeti temizle
             </button>
-            <button type="button" className={styles.primary} onClick={onCheckout}>
-              Siparişi tamamla →
+            <button type="button" className="btnPrimary" onClick={onCheckout}>
+              {editingNo !== null ? "Siparişi güncelle" : "Siparişi tamamla"}
             </button>
           </div>
         </div>
 
-        <aside className={styles.panel} aria-label="Eczane kazancı">
-          <h2>Eczane kazancı</h2>
-          <div className={styles.panelItem}>
-            <span>Ödeyeceğiniz (KDV hariç)</span>
-            <b className="num">{fmtMoneyText(summary.netMinor)}</b>
-          </div>
-          <div className={styles.panelItem}>
-            <span>Rafta satınca</span>
-            <b className="num">{fmtMoneyText(summary.shelfRevenueMinor)}</b>
-          </div>
-          <div className={`${styles.panelItem} ${styles.panelProfit}`}>
-            <span>Kazancınız</span>
-            <b className="num">{fmtMoneyText(summary.pharmacistProfitMinor)}</b>
-            <em>{fmtRate(summary.pharmacistRate)}</em>
+        <aside className={styles.offer} aria-label="Eczane kazancı">
+          <p className={styles.offerLabel}>Eczane kazancı</p>
+          <p className={styles.offerTotal}>{fmtMoney(summary.pharmacistProfitMinor)}</p>
+          <p className={styles.offerRate}>
+            Ödediğinin {fmtRate(summary.pharmacistRate)} kadarı kâr
+          </p>
+          <div className={styles.offerRows}>
+            <div>
+              <span>Ödeyeceğiniz (KDV hariç)</span>
+              <b className="num">{fmtMoney(summary.netMinor)}</b>
+            </div>
+            <div>
+              <span>Rafta satınca</span>
+              <b className="num">{fmtMoney(summary.shelfRevenueMinor)}</b>
+            </div>
+            <div>
+              <span>Raf fiyatı (KDV dahil)</span>
+              <b className="num">{fmtMoney(summary.shelfGrossMinor)}</b>
+            </div>
           </div>
           {summary.mfTotal > 0 && (
-            <p className={styles.mfInfo}>
-              <Icon icon={GiftIcon} size={18} />+{summary.mfTotal} kutu MF · rafta{" "}
-              {fmtMoneyText(summary.mfShelfValueMinor)} değerinde
+            <p className={styles.offerNote}>
+              <Icon icon={GiftIcon} size={16} />+{summary.mfTotal} kutu MF · rafta{" "}
+              {fmtMoney(summary.mfShelfValueMinor)} değerinde
             </p>
           )}
-          <div className={styles.markup}>
+          <div className={styles.markupRow}>
             <span>Eczacı kârı</span>
             <div className={styles.markupStepper}>
               <button
@@ -166,7 +184,7 @@ export function CartView({
                 aria-label="Eczacı kârını azalt"
                 onClick={() => changeMarkup(-MARKUP_STEP)}
               >
-                <Icon icon={MinusSignIcon} size={18} />
+                <Icon icon={MinusSignIcon} size={16} />
               </button>
               <b className="num">{fmtRate(markup, 0)}</b>
               <button
@@ -174,23 +192,19 @@ export function CartView({
                 aria-label="Eczacı kârını artır"
                 onClick={() => changeMarkup(MARKUP_STEP)}
               >
-                <Icon icon={PlusSignIcon} size={18} />
+                <Icon icon={PlusSignIcon} size={16} />
               </button>
             </div>
           </div>
           {cart.markupOverride !== null && (
             <button
               type="button"
-              className={styles.linkButton}
+              className={styles.offerLink}
               onClick={() => onCartChange({ ...cart, markupOverride: null })}
             >
-              Varsayılana dön
+              Varsayılan orana dön
             </button>
           )}
-          <div className={styles.panelFoot}>
-            <span>Raf fiyatı (KDV dahil)</span>
-            <span className="num">{fmtMoneyText(summary.shelfGrossMinor)}</span>
-          </div>
         </aside>
       </div>
     </section>
@@ -211,18 +225,22 @@ function CartLineRow({
   const [editPsf, setEditPsf] = useState(false);
   return (
     <div className={styles.cartRow} role="row">
-      <span role="cell" className={styles.cartName}>
-        <b>{line.label}</b>
-        <button
-          type="button"
-          className={styles.psfButton}
-          onClick={() => setEditPsf((v) => !v)}
-          aria-expanded={editPsf}
-        >
-          PSF {fmtAmount(line.psfMinor)}
-          {line.markupOverride !== null && ` · ${fmtRate(line.markupOverride, 1)}`}
-        </button>
-        {line.priceChanged && <span className={styles.badge}>fiyat güncellendi</span>}
+      <span role="cell" className={styles.name}>
+        <b>{line.familyName}</b>
+        <small>{line.variantName}</small>
+        <span className={styles.lineMeta}>
+          <button
+            type="button"
+            className={styles.psfButton}
+            onClick={() => setEditPsf((v) => !v)}
+            aria-expanded={editPsf}
+          >
+            PSF {fmtMoney(line.psfMinor)}
+            {line.markupOverride !== null && ` · ${fmtRate(line.markupOverride, 1)}`}
+          </button>
+          <span className={styles.phoneUnit}>× {fmtMoney(line.unitMinor)}</span>
+          {line.priceChanged && <span className={styles.badge}>fiyat güncellendi</span>}
+        </span>
         {editPsf && (
           <span className={styles.psfEdit}>
             <RateField
@@ -234,17 +252,17 @@ function CartLineRow({
           </span>
         )}
       </span>
-      <span role="cell" className="num">
-        {fmtAmount(line.unitMinor)}
+      <span role="cell" className={`num ${styles.colUnit}`}>
+        {fmtMoney(line.unitMinor)}
       </span>
       <span role="cell" className={styles.center}>
-        <Stepper compact value={line.qty} label={line.label} onChange={onQty} />
+        <Stepper value={line.qty} label={line.label} onChange={onQty} />
       </span>
       <span role="cell" className={styles.center}>
         <MfInput value={line.mf} fromRule={line.mfFromRule} label={line.label} onCommit={onMf} />
       </span>
-      <span role="cell" className="num">
-        {fmtAmount(line.amountMinor)}
+      <span role="cell" className={`num ${styles.amount}`}>
+        {fmtMoney(line.amountMinor)}
       </span>
     </div>
   );
@@ -271,7 +289,7 @@ function MfInput({
       inputMode="numeric"
       placeholder="—"
       value={shown}
-      onChange={(e) => setDraft(e.target.value.replace(/\D/g, "").slice(0, 4))}
+      onChange={(e) => setDraft(qtyInput(e.target.value))}
       onBlur={() => {
         if (draft !== null) {
           const parsed = parseQtyInput(draft);

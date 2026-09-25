@@ -17,6 +17,7 @@ interface Props {
   /** Paylaşım başarılı: sipariş "paylaşıldı" kaydedilir, sepet sıfırlanır. */
   onShared: (order: Order) => void;
   onClose: () => void;
+  editing: boolean;
 }
 
 /** Siparişi tamamla (PRD §4-D, §5.5): form + canlı PNG önizlemesi + paylaşım. */
@@ -29,6 +30,7 @@ export function CheckoutDialog({
   onNoteChange,
   onShared,
   onClose,
+  editing,
 }: Props) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const listId = useId();
@@ -88,10 +90,14 @@ export function CheckoutDialog({
   };
 
   return (
-    <Modal title="Siparişi tamamla" onClose={onClose} wide>
+    <Modal
+      title={editing ? `${order.no} · siparişi güncelle` : "Siparişi tamamla"}
+      onClose={onClose}
+      wide
+    >
       <div className={styles.checkout}>
         <form className={styles.checkoutForm} onSubmit={(e) => e.preventDefault()}>
-          <label>
+          <label className="field">
             <span>Eczane adı *</span>
             <input
               list={listId}
@@ -107,15 +113,15 @@ export function CheckoutDialog({
               ))}
             </datalist>
           </label>
-          <label>
+          <label className="field">
             <span>İl / ilçe</span>
             <input value={p.district} onChange={(e) => set({ district: e.target.value })} />
           </label>
-          <label>
+          <label className="field">
             <span>Adres</span>
             <input value={p.address} onChange={(e) => set({ address: e.target.value })} />
           </label>
-          <label>
+          <label className="field">
             <span>Telefon</span>
             <input
               inputMode="tel"
@@ -123,7 +129,7 @@ export function CheckoutDialog({
               onChange={(e) => set({ phone: e.target.value })}
             />
           </label>
-          <label>
+          <label className="field">
             <span>Not</span>
             <textarea value={order.note} onChange={(e) => onNoteChange(e.target.value)} />
           </label>
@@ -133,30 +139,20 @@ export function CheckoutDialog({
           <div className={styles.shareButtons}>
             <button
               type="button"
-              className={styles.whatsapp}
+              className={`btnPrimary ${styles.whatsapp}`}
               disabled={!ready || busy}
               onClick={onShare}
             >
               <Icon icon={WhatsappIcon} /> {busy ? "Hazırlanıyor…" : "WhatsApp ile paylaş"}
             </button>
-            <button
-              type="button"
-              className={styles.ghost}
-              disabled={!ready || busy}
-              onClick={onDownload}
-            >
-              <Icon icon={Download04Icon} size={18} /> PNG indir
+            <button type="button" className="btn" disabled={!ready || busy} onClick={onDownload}>
+              <Icon icon={Download04Icon} size={16} /> PNG indir
             </button>
-            <button
-              type="button"
-              className={styles.ghost}
-              disabled={!ready || busy}
-              onClick={onCopy}
-            >
-              <Icon icon={Copy01Icon} size={18} /> Kopyala
+            <button type="button" className="btn" disabled={!ready || busy} onClick={onCopy}>
+              <Icon icon={Copy01Icon} size={16} /> Kopyala
             </button>
           </div>
-          {!ready && <p className={styles.hint}>Paylaşmak için eczane adını yazın.</p>}
+          {!ready && <p className="hint">Paylaşmak için eczane adını yazın.</p>}
         </form>
         <div className={styles.checkoutPreview} aria-label="Sipariş resmi önizlemesi">
           <ScaledSheet order={order} sheetRef={sheetRef} />

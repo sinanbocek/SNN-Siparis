@@ -91,7 +91,9 @@ export const isCart: Guard<Cart> = (v): v is Cart =>
   arrayOf(isCartLine)(v.lines) &&
   nullable(isNumber)(v.markupOverride) &&
   isPharmacy(v.pharmacy) &&
-  isString(v.note);
+  isString(v.note) &&
+  (v.editing === undefined ||
+    (isObject(v.editing) && isString(v.editing.no) && isString(v.editing.createdAt)));
 
 const isOrderLine: Guard<OrderLine> = (v): v is OrderLine =>
   isObject(v) &&
@@ -122,7 +124,8 @@ const isOrder: Guard<Order> = (v): v is Order =>
   v.vatGroups.every(isVatGroup) &&
   isInt(v.grossMinor) &&
   (v.status === "ready" || v.status === "shared") &&
-  isInt(v.shareCount);
+  isInt(v.shareCount) &&
+  (v.updatedAt === undefined || isString(v.updatedAt));
 
 export const isOrders: Guard<readonly Order[]> = arrayOf(isOrder);
 

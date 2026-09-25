@@ -44,7 +44,7 @@ Bu bölüm aşağıdaki metnin önüne geçer; çelişkide bu tablo geçerlidir.
 | K11 | Eczacıya ayrı kazanç resmi | MVP sonrası                                                                                                                                                                                                    |
 | K12 | Branş                      | MVP'de yok (filtre ve etiket kaldırıldı); gerekirse MVP sonrası                                                                                                                                                |
 | K13 | Sipariş resmi              | Logo yok, yer tutucu çerçeve; büyük yazılı kart düzeni (E3 B)                                                                                                                                                  |
-| K14 | Katalog                    | Kart ↔ liste geçişi (E1)                                                                                                                                                                                       |
+| K14 | Katalog                    | Yalnız liste (25.09 revizyonu; kart görünümü kaldırıldı); görsele dokununca büyük görsel penceresi                                                                                                             |
 | K15 | Sepet                      | Solda tablo, sağda kazanç paneli (E2 A); telefonda üstte kazanç şeridi (S8)                                                                                                                                    |
 | K16 | Renk                       | Nötr + lacivert vurgu (P1 A); Stomagen açık mor (P2 b)                                                                                                                                                         |
 | K17 | Sipariş no                 | Cihaz harfi yok (S9 b): `VU-20260925-01`                                                                                                                                                                       |
@@ -53,6 +53,11 @@ Bu bölüm aşağıdaki metnin önüne geçer; çelişkide bu tablo geçerlidir.
 | K20 | Vivagen kutu yazısı        | "Ginkgo Biloba ve Vitamin Kompleksi" doğru                                                                                                                                                                     |
 | K21 | PNG                        | `html-to-image`; PWA MVP'de; ham `Math.*` yasak; belge seti ihale düzeninde                                                                                                                                    |
 | K22 | Hesap                      | SNN-Abacus-Core ile; KDV/kâr/MF kuralları projede (Abacus'ta yok)                                                                                                                                              |
+| K23 | Görsel dil                 | SNN-Ihale ile aynı: 14 px Inter, 38 px kontroller, beyaz üst şerit, koyu ana düğme; yönetimde renkli bant yok                                                                                                  |
+| K24 | Biçim                      | Para her yerde `₺29.646.278,29`; tarih "25 Eyl. 20:09", farklı yılda "24 Ara. 2025" (ABACUS parçaları)                                                                                                         |
+| K25 | Sipariş                    | Siparişler silinebilir ve düzenlenebilir (aynı no, güncel fiyat, `updatedAt`)                                                                                                                                  |
+| K26 | Yönetim şifresi            | Şifre uzunluğuna ulaşınca kendiliğinden denenir; telefonda yalnız rakam klavyesi                                                                                                                               |
+| K27 | Para kutusu                | Aile giriş alanları standardı: nokta binlik, kuruş virgül; belirsiz "98.5" reddedilir                                                                                                                          |
 
 ---
 

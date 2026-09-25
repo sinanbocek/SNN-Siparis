@@ -31,6 +31,8 @@ export interface Order {
   readonly grossMinor: MinorAmount;
   readonly status: OrderStatus;
   readonly shareCount: number;
+  /** Düzenlendiyse son düzenleme zamanı (ISO). */
+  readonly updatedAt?: string;
 }
 
 /** Sipariş no: önek + gün + günlük sıra → VU-20260925-01. */
@@ -55,6 +57,7 @@ export interface OrderInput {
   readonly repName: string;
   readonly repPhone: string;
   readonly headerTitle: string;
+  readonly updatedAt?: string;
 }
 
 export function buildOrder(input: OrderInput, summary: CartSummary): Order {
@@ -102,4 +105,14 @@ export function orderFileName(order: Order): string {
 
 export function canShare(pharmacy: PharmacyDraft, lineCount: number): boolean {
   return pharmacy.name.trim().length > 0 && lineCount > 0;
+}
+
+/** Düzenlenen siparişi aynı numarayla yerine koyar; yoksa ekler. */
+export function upsertOrder(orders: readonly Order[], order: Order): Order[] {
+  const exists = orders.some((o) => o.no === order.no);
+  return exists ? orders.map((o) => (o.no === order.no ? order : o)) : [...orders, order];
+}
+
+export function removeOrder(orders: readonly Order[], no: string): Order[] {
+  return orders.filter((o) => o.no !== no);
 }

@@ -5,12 +5,13 @@ import {
   type BackupFile,
   type BackupSummary,
 } from "../../application/admin/backup.ts";
-import { fmtBytes, fmtDateTime } from "../parts/format.ts";
+import { fmtBytes, fmtStamp } from "../parts/format.ts";
 import { Banner, Icon, Modal } from "../parts/parts.tsx";
 import styles from "./admin.module.css";
 
 interface Props {
   lastBackupAt: string | null;
+  nowIso: string;
   backupStale: boolean;
   usageBytes: number | null;
   onExport: (withCosts: boolean, withImages: boolean) => void;
@@ -21,6 +22,7 @@ interface Props {
 /** Veri: yedek al / yükle (F, D6, G5), depo kullanımı, başlangıca sıfırla. */
 export function DataTab({
   lastBackupAt,
+  nowIso,
   backupStale,
   usageBytes,
   onExport,
@@ -58,7 +60,7 @@ export function DataTab({
       <section className={styles.box}>
         <h3>Yedek al</h3>
         <p className={styles.note}>
-          Son yedek: {lastBackupAt === null ? "hiç alınmadı" : fmtDateTime(lastBackupAt)}
+          Son yedek: {lastBackupAt === null ? "hiç alınmadı" : fmtStamp(lastBackupAt, nowIso)}
         </p>
         <label className={styles.check}>
           <input
@@ -78,7 +80,7 @@ export function DataTab({
         </label>
         <button
           type="button"
-          className={styles.primary}
+          className="btnPrimary"
           onClick={() => onExport(withCosts, withImages)}
         >
           <Icon icon={FileExportIcon} size={18} /> Yedek dosyasını indir
@@ -91,7 +93,7 @@ export function DataTab({
           Başka cihazdan alınan yedeği seçin. Önce özet gösterilir; onaylamazsanız hiçbir şey
           değişmez.
         </p>
-        <label className={styles.secondary}>
+        <label className="btn">
           <Icon icon={FileImportIcon} size={18} /> Dosya seç
           <input
             type="file"
@@ -112,7 +114,7 @@ export function DataTab({
         </p>
         <button
           type="button"
-          className={styles.dangerButton}
+          className="btnDanger"
           onClick={() => {
             if (
               window.confirm(
@@ -131,10 +133,14 @@ export function DataTab({
         <Modal title="Yedek yüklensin mi?" onClose={() => setPending(null)}>
           <div className={styles.form}>
             <p>
-              {fmtDateTime(pending.summary.exportedAt)} tarihli yedek: {pending.summary.families}{" "}
-              aile, {pending.summary.variants} ürün,{" "}
-              {pending.summary.costs > 0 ? `${pending.summary.costs} maliyet` : "maliyet yok"},{" "}
-              {pending.summary.orders} sipariş, {pending.summary.images} görsel.
+              {[
+                `${fmtStamp(pending.summary.exportedAt, nowIso)} tarihli yedek:`,
+                `${pending.summary.families} aile,`,
+                `${pending.summary.variants} ürün,`,
+                pending.summary.costs > 0 ? `${pending.summary.costs} maliyet,` : "maliyet yok,",
+                `${pending.summary.orders} sipariş,`,
+                `${pending.summary.images} görsel.`,
+              ].join(" ")}
             </p>
             <p className={styles.warnText}>
               Bu cihazdaki ürünler, fiyatlar, ayarlar ve siparişler yedektekiyle değiştirilecek.
@@ -142,12 +148,12 @@ export function DataTab({
                 " Yedekte maliyet yok; bu cihazdaki maliyetler korunur."}
             </p>
             <div className={styles.actions}>
-              <button type="button" className={styles.secondary} onClick={() => setPending(null)}>
+              <button type="button" className="btn" onClick={() => setPending(null)}>
                 Vazgeç
               </button>
               <button
                 type="button"
-                className={styles.primary}
+                className="btnPrimary"
                 onClick={() => {
                   const error = onImport(pending.backup);
                   setPending(null);

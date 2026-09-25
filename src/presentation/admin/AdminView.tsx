@@ -1,10 +1,12 @@
 import {
   Calculator01Icon,
+  LockIcon,
   Logout01Icon,
   PackageIcon,
   Settings02Icon,
   Task01Icon,
 } from "@hugeicons/core-free-icons";
+import { text } from "@snn/abacus-core";
 import { useState } from "react";
 import type { BackupFile } from "../../application/admin/backup.ts";
 import { ADMIN_PASSWORD } from "../../application/admin/ports.ts";
@@ -36,6 +38,7 @@ export interface AdminProps {
   userImages: ImageMap;
   resizer: ImageResizer;
   lastBackupAt: string | null;
+  nowIso: string;
   backupStale: boolean;
   usageBytes: number | null;
   onPricingChange: (state: PricingState) => void;
@@ -54,8 +57,8 @@ export function AdminView(props: AdminProps) {
   return (
     <section className={styles.admin} aria-label="Yönetim">
       <div className={styles.adminBar}>
-        <span className={styles.adminTag}>Yönetim modu</span>
-        <nav className={styles.tabs} aria-label="Yönetim sekmeleri">
+        <span className={styles.adminTag}>Yönetim</span>
+        <nav className="tabs" aria-label="Yönetim sekmeleri">
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -63,12 +66,13 @@ export function AdminView(props: AdminProps) {
               aria-pressed={tab === t.id}
               onClick={() => setTab(t.id)}
             >
-              <Icon icon={t.icon} size={18} /> {t.label}
+              <Icon icon={t.icon} size={16} />
+              <span className={styles.tabLabel}>{t.label}</span>
             </button>
           ))}
         </nav>
-        <button type="button" className={styles.lockButton} onClick={props.onLock}>
-          <Icon icon={Logout01Icon} size={18} /> Kilitle
+        <button type="button" className="btn" onClick={props.onLock}>
+          <Icon icon={Logout01Icon} size={16} /> Kilitle
         </button>
       </div>
       {props.backupStale && tab !== "data" && (
@@ -99,6 +103,7 @@ export function AdminView(props: AdminProps) {
       {tab === "data" && (
         <DataTab
           lastBackupAt={props.lastBackupAt}
+          nowIso={props.nowIso}
           backupStale={props.backupStale}
           usageBytes={props.usageBytes}
           onExport={props.onExport}
@@ -110,47 +115,52 @@ export function AdminView(props: AdminProps) {
   );
 }
 
-/** Şifre perdesi (G1: MVP'de kabul edilen risk). */
+/**
+ * Şifre perdesi (G1: MVP'de kabul edilen risk). Şifre uzunluğuna ulaşınca kendiliğinden
+ * denenir. Kutu metin tipinde ama noktalı gösterilir: telefonda yalnız rakam klavyesi açılır.
+ */
 export function LockScreen({ onUnlock, onCancel }: { onUnlock: () => void; onCancel: () => void }) {
   const [value, setValue] = useState("");
   const [wrong, setWrong] = useState(false);
   return (
     <section className={styles.lock}>
-      <form
-        className={styles.lockCard}
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (value === ADMIN_PASSWORD) onUnlock();
-          else {
-            setWrong(true);
-            setValue("");
-          }
-        }}
-      >
+      <div className={`card ${styles.lockCard}`}>
+        <span className={styles.lockIcon} aria-hidden="true">
+          <Icon icon={LockIcon} size={18} />
+        </span>
         <h2>Yönetim</h2>
-        <label>
-          <span>Şifre</span>
-          <input
-            type="password"
-            inputMode="numeric"
-            autoFocus
-            value={value}
-            onChange={(e) => {
-              setValue(e.target.value);
-              setWrong(false);
-            }}
-          />
-        </label>
+        <p className="hint">Şifreyi girin; doğruysa kendiliğinden açılır.</p>
+        <input
+          aria-label="Şifre"
+          className={styles.pin}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck={false}
+          autoFocus
+          value={value}
+          onChange={(e) => {
+            const next = text.digits(e.target.value);
+            setWrong(false);
+            if (next.length >= ADMIN_PASSWORD.length) {
+              if (next === ADMIN_PASSWORD) {
+                onUnlock();
+                return;
+              }
+              setWrong(true);
+              setValue("");
+              return;
+            }
+            setValue(next);
+          }}
+        />
         {wrong && <p className={styles.errorText}>Şifre yanlış.</p>}
-        <div className={styles.actions}>
-          <button type="button" className={styles.secondary} onClick={onCancel}>
-            Vazgeç
-          </button>
-          <button type="submit" className={styles.primary}>
-            Aç
-          </button>
-        </div>
-      </form>
+        <button type="button" className="btn" onClick={onCancel}>
+          Vazgeç
+        </button>
+      </div>
     </section>
   );
 }

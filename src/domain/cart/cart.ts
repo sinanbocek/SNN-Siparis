@@ -1,6 +1,7 @@
 import { math, type MinorAmount, type Rate } from "../abacus/index.ts";
 import {
   effectiveVat,
+  familyOf,
   findVariant,
   variantLabel,
   variantPsf,
@@ -40,6 +41,8 @@ export interface Cart {
   readonly markupOverride: Rate | null;
   readonly pharmacy: PharmacyDraft;
   readonly note: string;
+  /** Geçmişten düzenlenen siparişin numarası; yeni siparişte yok. */
+  readonly editing?: { readonly no: string; readonly createdAt: string };
 }
 
 export const EMPTY_CART: Cart = {
@@ -96,6 +99,8 @@ export function qtyOf(cart: Cart, variantId: string): number {
 export interface LineSummary {
   readonly variantId: string;
   readonly label: string;
+  readonly familyName: string;
+  readonly variantName: string;
   readonly qty: number;
   readonly mf: number;
   readonly mfFromRule: number;
@@ -163,9 +168,12 @@ export function summarizeCart(catalog: Catalog, settings: Settings, cart: Cart):
       continue;
     }
     const ruleMf = mfFromRule(line.qty, variant.mfRule);
+    const family = familyOf(catalog, variant);
     lines.push({
       variantId: variant.id,
       label: variantLabel(catalog, variant),
+      familyName: family ? family.name : variant.name,
+      variantName: family ? variant.name : "",
       qty: line.qty,
       mf: line.mfOverride ?? ruleMf,
       mfFromRule: ruleMf,
