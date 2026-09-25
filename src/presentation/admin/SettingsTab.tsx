@@ -1,7 +1,7 @@
 import type { Rate } from "../../domain/abacus/index.ts";
 import { ROUNDING_STEPS, type Settings } from "../../domain/settings/settings.ts";
 import { fmtMoney } from "../parts/format.ts";
-import { RateField } from "../parts/parts.tsx";
+import { PhoneField, RateField } from "../parts/parts.tsx";
 import styles from "./admin.module.css";
 
 interface Props {
@@ -32,10 +32,10 @@ export function SettingsTab({ settings, onChange }: Props) {
       </label>
       <label>
         <span>Pazarlamacı telefonu</span>
-        <input
-          inputMode="tel"
+        <PhoneField
+          label="Pazarlamacı telefonu"
           value={settings.repPhone}
-          onChange={(e) => set({ repPhone: e.target.value })}
+          onChange={(repPhone) => set({ repPhone })}
         />
         <small className={styles.note}>
           Gerçek numara yalnız bu cihazda saklanır; kodda yer tutucu durur.

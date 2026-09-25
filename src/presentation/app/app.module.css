@@ -4,7 +4,7 @@
   flex-direction: column;
 }
 
-/* üst şerit: ihale .topbar */
+/* üst şerit: koyu (proje sahibi 25.09.2026) */
 .top {
   position: sticky;
   top: 0;
@@ -15,9 +15,8 @@
   gap: 12px;
   min-height: 56px;
   padding: calc(8px + env(safe-area-inset-top)) max(20px, calc((100vw - 1280px) / 2)) 8px;
-  background: rgb(255 255 255 / 88%);
-  backdrop-filter: saturate(180%) blur(10px);
-  border-bottom: 1px solid var(--line);
+  background: var(--ink);
+  color: #fff;
 }
 
 .brand {
@@ -34,9 +33,8 @@
   width: 32px;
   height: 32px;
   border-radius: var(--radius);
-  background: var(--ink);
+  background: rgb(255 255 255 / 12%);
   color: #fff;
-  box-shadow: var(--shadow);
 }
 
 .brandText {
@@ -52,15 +50,31 @@
 }
 
 .brandText small {
-  color: var(--mute);
+  color: rgb(255 255 255 / 60%);
   font-size: 12px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+/* koyu zeminde sekmeler */
+.nav {
+  background: rgb(255 255 255 / 8%) !important;
+}
+
 .nav > button {
   position: relative;
+  color: rgb(255 255 255 / 65%) !important;
+}
+
+.nav > button:hover {
+  color: #fff !important;
+}
+
+.nav > button[aria-current="page"] {
+  background: rgb(255 255 255 / 16%) !important;
+  color: #fff !important;
+  box-shadow: none !important;
 }
 
 .badge {
@@ -70,8 +84,8 @@
   height: 18px;
   padding: 0 5px;
   border-radius: 999px;
-  background: var(--ink);
-  color: #fff;
+  background: #fff;
+  color: var(--ink);
   font-size: 11px;
   font-weight: 700;
 }
@@ -82,26 +96,25 @@
   place-items: center;
   width: var(--control-h);
   height: var(--control-h);
-  border: 1px solid var(--line-strong);
+  border: 1px solid rgb(255 255 255 / 18%);
   border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: var(--shadow-sm);
+  background: transparent;
+  color: rgb(255 255 255 / 80%);
 }
 
 .gear:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: rgb(255 255 255 / 40%);
+  color: #fff;
 }
 
 .gearOn {
-  border-color: var(--ink);
-  background: var(--ink);
-  color: #fff;
+  border-color: #fff;
+  background: #fff;
+  color: var(--ink);
 }
 
 .gearOn:hover {
-  color: #fff;
+  color: var(--ink);
 }
 
 .main {
@@ -139,51 +152,34 @@
   box-shadow: var(--shadow-lg);
 }
 
-.toast {
-  position: fixed;
-  left: 50%;
-  bottom: calc(76px + env(safe-area-inset-bottom));
-  z-index: 60;
-  max-width: min(520px, calc(100% - 32px));
-  padding: 10px 16px;
-  border-radius: var(--radius);
-  background: var(--ink);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 500;
-  box-shadow: var(--shadow-lg);
-  transform: translateX(-50%);
-}
-
-/* telefon: gezinme alta iner (başparmak erişimi) */
+/* telefon: gezinme alta iner, sayfanın altını tam kaplar, koyu (yüzen değil) */
 @media (max-width: 700px) {
-  /* backdrop-filter, içindeki fixed gezinmeyi şeride bağlar; telefonda kapalı. */
   .top {
     grid-template-columns: 1fr auto;
     padding-left: 12px;
     padding-right: 12px;
-    background: var(--surface);
-    backdrop-filter: none;
   }
 
   .nav {
     position: fixed;
-    left: 8px;
-    right: 8px;
-    bottom: calc(8px + env(safe-area-inset-bottom));
+    left: 0;
+    right: 0;
+    bottom: 0;
     z-index: 20;
     display: grid !important;
     grid-template-columns: repeat(3, 1fr);
-    background: rgb(238 240 244 / 96%) !important;
-    backdrop-filter: blur(10px);
-    box-shadow: var(--shadow-lg);
+    gap: 0 !important;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom)) !important;
+    border-radius: 0 !important;
+    background: var(--ink) !important;
+    box-shadow: 0 -1px 0 rgb(255 255 255 / 8%);
   }
 
   .nav > button {
     flex-direction: column;
     justify-content: center;
     gap: 2px !important;
-    height: 48px !important;
+    height: 50px !important;
     padding: 0 !important;
     font-size: 11.5px !important;
   }
@@ -194,12 +190,12 @@
     left: calc(50% + 6px);
   }
 
+  .main {
+    padding-bottom: calc(90px + env(safe-area-inset-bottom));
+  }
+
   .cartFab {
     right: 12px;
     bottom: calc(76px + env(safe-area-inset-bottom));
-  }
-
-  .toast {
-    bottom: calc(132px + env(safe-area-inset-bottom));
   }
 }

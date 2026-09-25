@@ -1,12 +1,9 @@
 import { FileExportIcon, FileImportIcon, RefreshIcon } from "@hugeicons/core-free-icons";
 import { useState } from "react";
-import {
-  parseBackup,
-  type BackupFile,
-  type BackupSummary,
-} from "../../application/admin/backup.ts";
+import { parseBackup, type BackupFile } from "../../application/admin/backup.ts";
 import { fmtBytes, fmtStamp } from "../parts/format.ts";
-import { Banner, Icon, Modal } from "../parts/parts.tsx";
+import { useFeedback } from "../parts/feedback.tsx";
+import { Banner, Icon } from "../parts/parts.tsx";
 import styles from "./admin.module.css";
 
 interface Props {
@@ -31,20 +28,36 @@ export function DataTab({
 }: Props) {
   const [withCosts, setWithCosts] = useState(true);
   const [withImages, setWithImages] = useState(true);
-  const [pending, setPending] = useState<{ backup: BackupFile; summary: BackupSummary } | null>(
-    null,
-  );
-  const [message, setMessage] = useState<{ tone: "good" | "bad"; text: string } | null>(null);
+  const feedback = useFeedback();
 
   const readFile = async (file: File | undefined) => {
     if (!file) return;
-    setMessage(null);
     const parsed = parseBackup(await file.text());
     if (!parsed.ok) {
-      setMessage({ tone: "bad", text: `${parsed.message} Mevcut veri değişmedi.` });
+      feedback.toast({ tone: "error", text: `${parsed.message} Mevcut veri değişmedi.` });
       return;
     }
-    setPending({ backup: parsed.backup, summary: parsed.summary });
+    const sum = parsed.summary;
+    const ok = await feedback.confirm({
+      title: "Yedek yüklensin mi?",
+      message: [
+        `${fmtStamp(sum.exportedAt, nowIso)} tarihli yedek:`,
+        `${sum.families} ürün grubu, ${sum.variants} ürün,`,
+        sum.costs > 0 ? `${sum.costs} maliyet,` : "maliyet yok,",
+        `${sum.orders} sipariş, ${sum.images} görsel.`,
+        "Bu cihazdaki ürünler, fiyatlar, ayarlar ve siparişler yedektekiyle değiştirilecek.",
+        parsed.backup.costs === null ? "Yedekte maliyet yok; bu cihazdaki maliyetler korunur." : "",
+      ].join(" "),
+      confirmLabel: "Yükle",
+      danger: true,
+    });
+    if (!ok) return;
+    const error = onImport(parsed.backup);
+    feedback.toast(
+      error === null
+        ? { tone: "success", text: "Yedek yüklendi." }
+        : { tone: "error", text: error },
+    );
   };
 
   return (
@@ -55,7 +68,6 @@ export function DataTab({
           siparişler kaybolur.
         </Banner>
       )}
-      {message !== null && <Banner tone={message.tone}>{message.text}</Banner>}
 
       <section className={styles.box}>
         <h3>Yedek al</h3>
@@ -81,7 +93,10 @@ export function DataTab({
         <button
           type="button"
           className="btnPrimary"
-          onClick={() => onExport(withCosts, withImages)}
+          onClick={() => {
+            onExport(withCosts, withImages);
+            feedback.toast({ tone: "success", text: "Yedek dosyası indirildi." });
+          }}
         >
           <Icon icon={FileExportIcon} size={18} /> Yedek dosyasını indir
         </button>
@@ -115,61 +130,22 @@ export function DataTab({
         <button
           type="button"
           className="btnDanger"
-          onClick={() => {
-            if (
-              window.confirm(
-                "Ürünler, fiyatlar, maliyetler ve görseller başlangıç verisine döner. Siparişler ve ayarlar kalır. Önce yedek almanızı öneririm. Devam edilsin mi?",
-              )
-            ) {
-              onResetSeed();
-            }
+          onClick={async () => {
+            const ok = await feedback.confirm({
+              title: "Başlangıç verisine sıfırlansın mı?",
+              message:
+                "Ürünler, fiyatlar, maliyetler ve görseller başlangıç verisine döner. Siparişler ve ayarlar kalır. Önce yedek almanızı öneririm.",
+              confirmLabel: "Sıfırla",
+              danger: true,
+            });
+            if (!ok) return;
+            onResetSeed();
+            feedback.toast({ tone: "success", text: "Başlangıç verisine dönüldü." });
           }}
         >
           <Icon icon={RefreshIcon} size={18} /> Başlangıç verisine sıfırla
         </button>
       </section>
-
-      {pending && (
-        <Modal title="Yedek yüklensin mi?" onClose={() => setPending(null)}>
-          <div className={styles.form}>
-            <p>
-              {[
-                `${fmtStamp(pending.summary.exportedAt, nowIso)} tarihli yedek:`,
-                `${pending.summary.families} aile,`,
-                `${pending.summary.variants} ürün,`,
-                pending.summary.costs > 0 ? `${pending.summary.costs} maliyet,` : "maliyet yok,",
-                `${pending.summary.orders} sipariş,`,
-                `${pending.summary.images} görsel.`,
-              ].join(" ")}
-            </p>
-            <p className={styles.warnText}>
-              Bu cihazdaki ürünler, fiyatlar, ayarlar ve siparişler yedektekiyle değiştirilecek.
-              {pending.backup.costs === null &&
-                " Yedekte maliyet yok; bu cihazdaki maliyetler korunur."}
-            </p>
-            <div className={styles.actions}>
-              <button type="button" className="btn" onClick={() => setPending(null)}>
-                Vazgeç
-              </button>
-              <button
-                type="button"
-                className="btnPrimary"
-                onClick={() => {
-                  const error = onImport(pending.backup);
-                  setPending(null);
-                  setMessage(
-                    error === null
-                      ? { tone: "good", text: "Yedek yüklendi." }
-                      : { tone: "bad", text: error },
-                  );
-                }}
-              >
-                Yükle
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
     </div>
   );
 }

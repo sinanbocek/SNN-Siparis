@@ -4,7 +4,7 @@ import {
   ShoppingBasket01Icon,
   Task01Icon,
 } from "@hugeicons/core-free-icons";
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import type { PngRenderer, ImageResizer, ShareService } from "../../application/ports/devices.ts";
 import type {
   DocumentStore,
@@ -25,6 +25,7 @@ import {
   type Order,
 } from "../../domain/order/order.ts";
 import type { Settings } from "../../domain/settings/settings.ts";
+import { FeedbackProvider, useFeedback } from "../parts/feedback.tsx";
 import { Banner, Icon } from "../parts/parts.tsx";
 import { CartView } from "../sales/CartView.tsx";
 import { CatalogView } from "../sales/CatalogView.tsx";
@@ -92,7 +93,17 @@ function cartFromOrder(catalog: Catalog, order: Order): { cart: Cart; missing: n
   return { cart, missing };
 }
 
-export function App({ stores, seed, share, png, resizer, updates, now, admin }: AppProps) {
+/** Kabuk + ortak onay/bildirim sağlayıcısı. */
+export function App(props: AppProps) {
+  return (
+    <FeedbackProvider>
+      <AppShell {...props} />
+    </FeedbackProvider>
+  );
+}
+
+function AppShell({ stores, seed, share, png, resizer, updates, now, admin }: AppProps) {
+  const feedback = useFeedback();
   const initial = useMemo(() => {
     const installedAt = now();
     const meta = loadOr<Meta>(stores.meta, { installedAt, lastBackupAt: null });
@@ -120,10 +131,7 @@ export function App({ stores, seed, share, png, resizer, updates, now, admin }: 
   const [view, setView] = useState<View>("catalog");
   const [checkout, setCheckout] = useState<{ no: string; createdAt: string } | null>(null);
   const [resume, setResume] = useState(initial.cart.value.lines.length > 0);
-  const [undo, setUndo] = useState<Cart | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
   const [updateReady, setUpdateReady] = useState(false);
-  const undoTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => updates.subscribe(setUpdateReady), [updates]);
 
@@ -154,26 +162,29 @@ export function App({ stores, seed, share, png, resizer, updates, now, admin }: 
   useEffect(() => {
     if (dropped.length === 0) return;
     updateCart(pruneCart(cart, dropped));
-    setToast("Katalogdan kaldırılan ürünler sepetten çıkarıldı.");
-  }, [dropped, cart, updateCart]);
-
-  useEffect(() => {
-    if (toast === null) return undefined;
-    const t = window.setTimeout(() => setToast(null), 5000);
-    return () => window.clearTimeout(t);
-  }, [toast]);
+    feedback.toast({ text: "Katalogdan kaldırılan ürünler sepetten çıkarıldı.", tone: "info" });
+  }, [dropped, cart, updateCart, feedback]);
 
   const onSetQty = (variant: Variant, qty: number) => {
     setResume(false);
     updateCart(setQty(cart, variant, qty));
   };
 
-  const clearCart = () => {
-    if (!window.confirm("Sepet temizlensin mi?")) return;
-    setUndo(cart);
+  const clearCart = async () => {
+    const ok = await feedback.confirm({
+      title: "Sepet temizlensin mi?",
+      message: `${cart.lines.length} ürün sepetten çıkarılacak. 10 saniye içinde geri alabilirsiniz.`,
+      confirmLabel: "Temizle",
+      danger: true,
+    });
+    if (!ok) return;
+    const previous = cart;
     updateCart(EMPTY_CART);
-    window.clearTimeout(undoTimer.current);
-    undoTimer.current = window.setTimeout(() => setUndo(null), 10_000);
+    feedback.toast({
+      text: "Sepet temizlendi.",
+      tone: "info",
+      action: { label: "Geri al", onClick: () => updateCart(previous) },
+    });
   };
 
   const editing = cart.editing === undefined ? null : cart.editing;
@@ -221,11 +232,12 @@ export function App({ stores, seed, share, png, resizer, updates, now, admin }: 
     updateCart(EMPTY_CART);
     setCheckout(null);
     setView(previous ? "orders" : "catalog");
-    setToast(
-      previous
+    feedback.toast({
+      tone: "success",
+      text: previous
         ? `${order.no} güncellendi ve paylaşıldı.`
         : `${order.no} paylaşıldı. Sepet yeni eczane için boşaltıldı.`,
-    );
+    });
   };
 
   /** Geçmişten yeniden paylaşıldı: yalnız sayaç ve durum. */
@@ -233,8 +245,15 @@ export function App({ stores, seed, share, png, resizer, updates, now, admin }: 
     saveOrders(upsertOrder(orders, markShared(order)));
   };
 
-  const loadOrderIntoCart = (order: Order, asEdit: boolean) => {
-    if (cart.lines.length > 0 && !window.confirm("Açık sepet bu siparişle değiştirilsin mi?")) {
+  const loadOrderIntoCart = async (order: Order, asEdit: boolean) => {
+    if (
+      cart.lines.length > 0 &&
+      !(await feedback.confirm({
+        title: "Açık sepet değiştirilsin mi?",
+        message: `Sepetteki ${cart.lines.length} ürün yerine ${order.no} açılacak.`,
+        confirmLabel: "Değiştir",
+      }))
+    ) {
       return;
     }
     const { cart: next, missing } = cartFromOrder(catalog, order);
@@ -248,7 +267,10 @@ export function App({ stores, seed, share, png, resizer, updates, now, admin }: 
     const lead = asEdit
       ? `${order.no} düzenleniyor; güncel fiyatlar kullanılır.`
       : "Sipariş güncel fiyatlarla sepete alındı.";
-    setToast(missing > 0 ? `${lead} ${missing} ürün artık katalogda yok.` : lead);
+    feedback.toast({
+      tone: "info",
+      text: missing > 0 ? `${lead} ${missing} ürün artık katalogda yok.` : lead,
+    });
   };
 
   const deleteOrder = (order: Order) => {
@@ -257,7 +279,7 @@ export function App({ stores, seed, share, png, resizer, updates, now, admin }: 
       const { editing: _dropped, ...rest } = cart;
       updateCart(rest);
     }
-    setToast(`${order.no} silindi.`);
+    feedback.toast({ tone: "success", text: `${order.no} silindi.` });
   };
 
   const cartCount = summary.lines.length;
@@ -353,10 +375,13 @@ export function App({ stores, seed, share, png, resizer, updates, now, admin }: 
           action={
             <button
               type="button"
-              onClick={() => {
-                if (window.confirm("Düzenleme bırakılsın mı? Kayıtlı sipariş değişmez.")) {
-                  updateCart(EMPTY_CART);
-                }
+              onClick={async () => {
+                const ok = await feedback.confirm({
+                  title: "Düzenleme bırakılsın mı?",
+                  message: "Sepet boşalır; kayıtlı sipariş değişmez.",
+                  confirmLabel: "Bırak",
+                });
+                if (ok) updateCart(EMPTY_CART);
               }}
             >
               Düzenlemeyi bırak
@@ -397,25 +422,6 @@ export function App({ stores, seed, share, png, resizer, updates, now, admin }: 
             : `Açık sepet var (${cart.lines.length} ürün).`}
         </Banner>
       )}
-      {undo !== null && (
-        <Banner
-          tone="warn"
-          action={
-            <button
-              type="button"
-              onClick={() => {
-                updateCart(undo);
-                setUndo(null);
-              }}
-            >
-              Geri al
-            </button>
-          }
-        >
-          Sepet temizlendi.
-        </Banner>
-      )}
-
       <main className={styles.main}>
         {view === "catalog" && (
           <CatalogView
@@ -509,15 +515,11 @@ export function App({ stores, seed, share, png, resizer, updates, now, admin }: 
         </button>
       )}
 
-      {toast !== null && (
-        <div className={styles.toast} role="status">
-          {toast}
-        </div>
-      )}
-
       {checkout !== null && draftOrder !== null && (
         <CheckoutDialog
           order={draftOrder}
+          pharmacy={cart.pharmacy}
+          note={cart.note}
           editing={editing !== null}
           suggestions={knownPharmacies(orders)}
           share={share}

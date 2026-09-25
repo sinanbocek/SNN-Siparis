@@ -3,12 +3,12 @@ import { Cancel01Icon, MinusSignIcon, PlusSignIcon } from "@hugeicons/core-free-
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { MAX_QTY } from "../../domain/cart/cart.ts";
 import {
-  moneyInput,
+  moneyInputStep,
   parseMoneyInput,
   parseQtyInput,
   parseRateInput,
+  phoneInput,
   qtyInput,
-  rateInput,
   rateToInput,
 } from "../../domain/input/parse.ts";
 import type { MinorAmount, Rate } from "../../domain/abacus/index.ts";
@@ -75,17 +75,13 @@ export function Stepper({
   );
 }
 
-/** Görsel yoksa aile rengiyle çizilmiş kutu: çapraz şerit (PRD §5.8). */
+/** Görsel yoksa nötr gri yer tutucu: çapraz şerit (PRD §5.8; renk seçici kaldırıldı). */
 export function ProductImage({
   src,
-  color,
-  accent,
   title,
   onOpen,
 }: {
   src: string | null;
-  color: string;
-  accent: string | null;
   title: string;
   onOpen?: () => void;
 }) {
@@ -96,9 +92,8 @@ export function ProductImage({
   ) : (
     <svg viewBox="0 0 120 120" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
       <rect width="120" height="120" fill="#f4f5f7" />
-      <path d="M-10 92 L130 20" stroke={color} strokeWidth="14" opacity="0.85" />
-      <path d="M58 -10 L92 130" stroke={color} strokeWidth="9" opacity="0.55" />
-      {accent !== null && <path d="M-10 104 L130 32" stroke={accent} strokeWidth="3" />}
+      <path d="M-10 92 L130 20" stroke="#c3c8d2" strokeWidth="14" />
+      <path d="M58 -10 L92 130" stroke="#d4d8e0" strokeWidth="9" />
     </svg>
   );
   if (onOpen && shown) {
@@ -200,7 +195,67 @@ export function Modal({
   );
 }
 
-/** Para kutusu: canlı binlik ayraç, çıkışta kuruş. */
+/**
+ * Tutar/oran kutusunun ortak gövdesi — GHS-Panel MoneyInput ile aynı davranış:
+ * reddedilen giriş kutuyu değiştirmez, altında kısa açıklama çıkar; çıkışta değer bildirilir.
+ */
+function StepField({
+  shown,
+  label,
+  placeholder,
+  suffix,
+  onCommit,
+}: {
+  shown: string;
+  label: string;
+  placeholder: string;
+  suffix: string;
+  onCommit: (text: string) => void;
+}) {
+  const [draft, setDraft] = useState(shown);
+  const [message, setMessage] = useState<string | null>(null);
+  const messageId = useId();
+  useEffect(() => setDraft(shown), [shown]);
+  return (
+    <span className={styles.affix}>
+      <input
+        type="text"
+        aria-label={label}
+        aria-invalid={message !== null}
+        aria-describedby={message !== null ? messageId : undefined}
+        inputMode="decimal"
+        autoComplete="off"
+        placeholder={placeholder}
+        value={draft}
+        className={styles.number}
+        onChange={(e) => {
+          const step = moneyInputStep(draft, e.target.value);
+          if (!step.ok) {
+            setMessage(step.message);
+            return;
+          }
+          setMessage(null);
+          setDraft(step.text);
+        }}
+        onBlur={() => {
+          setMessage(null);
+          onCommit(draft);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        }}
+      />
+      <span aria-hidden="true">{suffix}</span>
+      {message !== null && (
+        <small id={messageId} className={styles.inputHint} role="status">
+          {message}
+        </small>
+      )}
+    </span>
+  );
+}
+
+/** Para kutusu: yalnız rakam ve virgül, binlik kendiliğinden; çıkışta kuruş. */
 export function MoneyField({
   value,
   onCommit,
@@ -212,41 +267,18 @@ export function MoneyField({
   label: string;
   placeholder?: string;
 }) {
-  const [draft, setDraft] = useState(moneyToInput(value));
-  const [rejected, setRejected] = useState(false);
-  useEffect(() => setDraft(moneyToInput(value)), [value]);
   return (
-    <span className={styles.affix}>
-      <input
-        aria-label={label}
-        aria-invalid={rejected}
-        inputMode="decimal"
-        placeholder={placeholder}
-        value={draft}
-        className={styles.number}
-        onChange={(e) => {
-          const result = moneyInput(e.target.value, draft);
-          setRejected(result.rejected);
-          setDraft(result.text);
-        }}
-        onBlur={() => {
-          const parsed = parseMoneyInput(draft);
-          onCommit(parsed);
-          setDraft(moneyToInput(parsed));
-          setRejected(false);
-        }}
-      />
-      <span aria-hidden="true">₺</span>
-      {rejected && (
-        <small className={styles.inputHint} role="alert">
-          Kuruş için virgül kullanın (ör. 98,50)
-        </small>
-      )}
-    </span>
+    <StepField
+      shown={moneyToInput(value)}
+      label={label}
+      placeholder={placeholder}
+      suffix="₺"
+      onCommit={(text) => onCommit(parseMoneyInput(text))}
+    />
   );
 }
 
-/** Oran kutusu: "%20", "20,5" okur; çıkışta kesir. */
+/** Oran kutusu: "20", "20,5" (yüzde); çıkışta kesir. */
 export function RateField({
   value,
   onCommit,
@@ -258,22 +290,37 @@ export function RateField({
   label: string;
   placeholder?: string;
 }) {
-  const shown = value === null ? "" : rateToInput(value);
-  const [draft, setDraft] = useState(shown);
-  useEffect(() => setDraft(shown), [shown]);
   return (
-    <span className={styles.affix}>
-      <input
-        aria-label={label}
-        inputMode="decimal"
-        placeholder={placeholder}
-        value={draft}
-        className={styles.number}
-        onChange={(e) => setDraft(rateInput(e.target.value))}
-        onBlur={() => onCommit(parseRateInput(draft))}
-      />
-      <span aria-hidden="true">%</span>
-    </span>
+    <StepField
+      shown={value === null ? "" : rateToInput(value)}
+      label={label}
+      placeholder={placeholder}
+      suffix="%"
+      onCommit={(text) => onCommit(parseRateInput(text))}
+    />
+  );
+}
+
+/** Telefon kutusu: yalnız rakam, en çok 11 hane. */
+export function PhoneField({
+  value,
+  onChange,
+  label,
+}: {
+  value: string;
+  onChange: (digits: string) => void;
+  label: string;
+}) {
+  return (
+    <input
+      type="tel"
+      inputMode="tel"
+      autoComplete="off"
+      aria-label={label}
+      placeholder="05xx xxx xx xx"
+      value={value}
+      onChange={(e) => onChange(phoneInput(e.target.value))}
+    />
   );
 }
 

@@ -5,11 +5,11 @@ import {
   Image01Icon,
   PlusSignIcon,
 } from "@hugeicons/core-free-icons";
-import { useState } from "react";
 import type { ImageResizer } from "../../application/ports/devices.ts";
 import type { ImageMap } from "../../application/ports/stores.ts";
 import { imageFor } from "../../application/session.ts";
 import type { Catalog, Family, Variant } from "../../domain/catalog/catalog.ts";
+import { useFeedback } from "../parts/feedback.tsx";
 import { Icon, ProductImage } from "../parts/parts.tsx";
 import styles from "./admin.module.css";
 
@@ -44,7 +44,7 @@ function swapOrder<T extends { id: string; order: number }>(
   );
 }
 
-/** Ürünler: aile ve varyant ekle/düzenle/sil, sıralama, yayında/gizli, görsel. */
+/** Ürünler: ürün grubu ve çeşit ekle/düzenle/sil, sıralama, yayında/gizli, görsel. */
 export function ProductsTab({
   catalog,
   images,
@@ -53,7 +53,7 @@ export function ProductsTab({
   onCatalogChange,
   onImagesChange,
 }: Props) {
-  const [message, setMessage] = useState<string | null>(null);
+  const feedback = useFeedback();
   const families = [...catalog.families].sort((a, b) => a.order - b.order);
 
   const patchFamily = (id: string, patch: Partial<Family>) =>
@@ -74,7 +74,7 @@ export function ProductsTab({
       families: [
         ...catalog.families,
         {
-          id: newId("aile"),
+          id: newId("group"),
           name: "Yeni ürün",
           color: "#1F4E8C",
           accent: null,
@@ -108,31 +108,43 @@ export function ProductsTab({
     });
   };
 
-  const removeFamily = (family: Family) => {
-    if (
-      !window.confirm(`${family.name} ve tüm çeşitleri silinsin mi? Geçmiş siparişler etkilenmez.`)
-    )
-      return;
+  const removeFamily = async (family: Family) => {
+    const ok = await feedback.confirm({
+      title: "Ürün grubu silinsin mi?",
+      message: `${family.name} ve tüm çeşitleri katalogdan silinecek. Geçmiş siparişler etkilenmez.`,
+      confirmLabel: "Sil",
+      danger: true,
+    });
+    if (!ok) return;
     onCatalogChange({
       families: catalog.families.filter((f) => f.id !== family.id),
       variants: catalog.variants.filter((v) => v.familyId !== family.id),
     });
   };
 
-  const removeVariant = (variant: Variant) => {
-    if (!window.confirm(`${variant.name} silinsin mi? Geçmiş siparişler etkilenmez.`)) return;
+  const removeVariant = async (variant: Variant) => {
+    const ok = await feedback.confirm({
+      title: "Çeşit silinsin mi?",
+      message: `${variant.name} katalogdan silinecek. Geçmiş siparişler etkilenmez.`,
+      confirmLabel: "Sil",
+      danger: true,
+    });
+    if (!ok) return;
     onCatalogChange({ ...catalog, variants: catalog.variants.filter((v) => v.id !== variant.id) });
   };
 
   const upload = async (key: string, file: File | undefined) => {
     if (!file) return;
-    setMessage(null);
     try {
       const dataUrl = await resizer.resize(file);
       const error = await onImagesChange({ ...userImages, [key]: dataUrl });
-      if (error !== null) setMessage(error);
+      feedback.toast(
+        error === null
+          ? { tone: "success", text: "Görsel kaydedildi." }
+          : { tone: "error", text: error },
+      );
     } catch {
-      setMessage("Görsel okunamadı. JPG, PNG ya da WebP seçin.");
+      feedback.toast({ tone: "error", text: "Görsel okunamadı. JPG, PNG ya da WebP seçin." });
     }
   };
 
@@ -143,7 +155,6 @@ export function ProductsTab({
 
   return (
     <div className={styles.tab}>
-      {message !== null && <p className={styles.errorText}>{message}</p>}
       <div className={styles.familyList}>
         {families.map((f, fi) => {
           const variants = catalog.variants
@@ -157,12 +168,7 @@ export function ProductsTab({
             >
               <div className={styles.familyHead}>
                 <div className={styles.familyImage}>
-                  <ProductImage
-                    src={imageFor(images, f.id, null)}
-                    color={f.color}
-                    accent={f.accent}
-                    title={f.name}
-                  />
+                  <ProductImage src={imageFor(images, f.id, null)} title={f.name} />
                   <label className={styles.uploadButton}>
                     <Icon icon={Image01Icon} size={16} /> Görsel
                     <input
@@ -184,21 +190,13 @@ export function ProductsTab({
                 </div>
                 <div className={styles.familyFields}>
                   <label>
-                    <span>Aile adı</span>
+                    <span>Ürün grubu adı</span>
                     <input
                       value={f.name}
                       onChange={(e) => patchFamily(f.id, { name: e.target.value })}
                     />
                   </label>
                   <div className={styles.row}>
-                    <label>
-                      <span>Renk</span>
-                      <input
-                        type="color"
-                        value={f.color}
-                        onChange={(e) => patchFamily(f.id, { color: e.target.value })}
-                      />
-                    </label>
                     <label className={styles.check}>
                       <input
                         type="checkbox"
@@ -238,7 +236,7 @@ export function ProductsTab({
                       <Icon icon={ArrowDown01Icon} size={18} />
                     </button>
                     <button type="button" className="btnDanger" onClick={() => removeFamily(f)}>
-                      <Icon icon={Delete02Icon} size={18} /> Aileyi sil
+                      <Icon icon={Delete02Icon} size={18} /> Grubu sil
                     </button>
                   </div>
                 </div>
@@ -361,7 +359,7 @@ export function ProductsTab({
         })}
       </div>
       <button type="button" className="btnPrimary" onClick={addFamily}>
-        <Icon icon={PlusSignIcon} size={18} /> Ürün ailesi ekle
+        <Icon icon={PlusSignIcon} size={18} /> Ürün grubu ekle
       </button>
     </div>
   );

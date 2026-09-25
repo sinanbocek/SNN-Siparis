@@ -30,6 +30,7 @@ import { parseQtyInput, qtyInput } from "../../domain/input/parse.ts";
 import { markupFromPsf, priceWarnings, psfFromSale } from "../../domain/pricing/pricing.ts";
 import type { Settings } from "../../domain/settings/settings.ts";
 import { fmtMoney, fmtRate } from "../parts/format.ts";
+import { useFeedback } from "../parts/feedback.tsx";
 import { Icon, Modal, MoneyField, RateField } from "../parts/parts.tsx";
 import styles from "./admin.module.css";
 
@@ -197,7 +198,10 @@ export function PricingTab({ state, settings, onChange }: Props) {
                   <td data-label="MF">{v.mfRule ? `${v.mfRule.every}+${v.mfRule.free}` : "—"}</td>
                   <td className={styles.cellWarn}>
                     {warnings.includes("sale_not_below_psf") && (
-                      <span className={styles.bad} title="Satış fiyatı PSF'ye eşit ya da yüksek">
+                      <span
+                        className={styles.bad}
+                        title="Satış fiyatı perakende satış fiyatına eşit ya da yüksek"
+                      >
                         <Icon icon={CancelCircleIcon} size={18} />
                       </span>
                     )}
@@ -292,6 +296,7 @@ function PriceEditor({
   const [mfEvery, setMfEvery] = useState(variant.mfRule ? String(variant.mfRule.every) : "");
   const [mfFree, setMfFree] = useState(variant.mfRule ? String(variant.mfRule.free) : "");
   const [error, setError] = useState<string | null>(null);
+  const feedback = useFeedback();
 
   const policy: ProfitPolicy | null = (() => {
     if (isRatePolicy(kind)) {
@@ -314,7 +319,7 @@ function PriceEditor({
         : psfFromSale(effectiveSale, markupRate, settings.roundingStepMinor);
   const warnings = effectiveSale !== null && psf !== null ? priceWarnings(effectiveSale, psf) : [];
 
-  const save = () => {
+  const save = async () => {
     if (policy === null) return setError("Kâr modu değerini girin.");
     if (kind === "margin" && rate !== null && rate >= 1) {
       return setError("Marj %100 ve üstü olamaz (H5).");
@@ -322,16 +327,20 @@ function PriceEditor({
     if (isRatePolicy(kind) && cost === null) {
       return setError("Bu kâr modu için maliyet gerekli. Maliyet yoksa sabit fiyat seçin.");
     }
-    if (psfMode === "fixed" && psfFixed === null) return setError("Sabit PSF tutarını girin.");
+    if (psfMode === "fixed" && psfFixed === null)
+      return setError("Sabit perakende satış fiyatını girin.");
     const every = mfEvery.trim() === "" ? 0 : parseQtyInput(mfEvery);
     const free = mfFree.trim() === "" ? 0 : parseQtyInput(mfFree);
     if (every === null || free === null) return setError("MF kuralı okunamadı.");
     if (every > 0 !== free > 0) return setError("MF için iki kutuyu da doldurun.");
     if (
       warnings.includes("sale_not_below_psf") &&
-      !window.confirm(
-        "Satış fiyatı PSF'ye eşit ya da yüksek; eczacı kâr etmez. Yine kaydedilsin mi?",
-      )
+      !(await feedback.confirm({
+        title: "Yine kaydedilsin mi?",
+        message:
+          "Satış fiyatı perakende satış fiyatına eşit ya da yüksek; eczacı bu üründen kâr etmez.",
+        confirmLabel: "Kaydet",
+      }))
     ) {
       return undefined;
     }
@@ -384,7 +393,7 @@ function PriceEditor({
         </div>
 
         <label>
-          <span>PSF</span>
+          <span>Perakende Satış Fiyatı</span>
           <select
             value={psfMode}
             onChange={(e) => setPsfMode(e.target.value as PsfSetting["mode"])}
@@ -395,7 +404,7 @@ function PriceEditor({
         </label>
         {psfMode === "fixed" ? (
           <label>
-            <span>Sabit PSF</span>
+            <span>Sabit Perakende Satış Fiyatı</span>
             <MoneyField label="Sabit PSF" value={psfFixed} onCommit={setPsfFixed} />
           </label>
         ) : (
@@ -413,7 +422,7 @@ function PriceEditor({
         )}
         <div className={styles.preview}>
           <span>
-            PSF <b className="num">{fmtMoney(psf)}</b>
+            Perakende Satış Fiyatı <b className="num">{fmtMoney(psf)}</b>
           </span>
           <span>
             Eczacı{" "}
@@ -425,7 +434,9 @@ function PriceEditor({
           </span>
         </div>
         {warnings.includes("sale_not_below_psf") && (
-          <p className={styles.errorText}>Satış fiyatı PSF'ye eşit ya da yüksek.</p>
+          <p className={styles.errorText}>
+            Satış fiyatı perakende satış fiyatına eşit ya da yüksek.
+          </p>
         )}
         {warnings.includes("low_pharmacist_margin") && (
           <p className={styles.warnText}>Eczacı marjı %10'un altında.</p>

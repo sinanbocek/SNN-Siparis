@@ -84,6 +84,7 @@ const isCartLine: Guard<CartLine> = (v): v is CartLine =>
   isInt(v.qty) &&
   nullable(isInt)(v.mfOverride) &&
   nullable(isNumber)(v.markupOverride) &&
+  (v.psfOverride === undefined || isInt(v.psfOverride)) &&
   isInt(v.unitAtAdd);
 
 export const isCart: Guard<Cart> = (v): v is Cart =>

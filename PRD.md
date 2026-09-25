@@ -58,6 +58,13 @@ Bu bölüm aşağıdaki metnin önüne geçer; çelişkide bu tablo geçerlidir.
 | K25 | Sipariş                    | Siparişler silinebilir ve düzenlenebilir (aynı no, güncel fiyat, `updatedAt`)                                                                                                                                  |
 | K26 | Yönetim şifresi            | Şifre uzunluğuna ulaşınca kendiliğinden denenir; telefonda yalnız rakam klavyesi                                                                                                                               |
 | K27 | Para kutusu                | Aile giriş alanları standardı: nokta binlik, kuruş virgül; belirsiz "98.5" reddedilir                                                                                                                          |
+| K28 | Terim                      | Arayüzde "aile" yerine **Ürün grubu** (kodda `family` adı veri uyumu için kalır)                                                                                                                               |
+| K29 | Renk                       | Amber/turuncu yok; ürün grubu renk seçici kaldırıldı, yer tutucu nötr gri                                                                                                                                      |
+| K30 | Sepet fiyatı               | İki yönlü: satırda perakende satış fiyatı yazılır → eczacı kârı geri hesaplanır; sepet oranı değişince elle fiyatlar orana döner                                                                               |
+| K31 | Metin                      | Açıklamalarda "Perakende Satış Fiyatı"; sütun başlığında "PSF" kalabilir                                                                                                                                       |
+| K32 | Giriş kutuları             | GHS-Panel `moneyInputStep` kuralı: yalnız rakam ve tek virgül, binlik kendiliğinden, reddedilen girişte açıklama; telefon yalnız rakam (11 hane)                                                               |
+| K33 | Gezinme                    | Üst şerit koyu; telefonda alt gezinme tam genişlik, koyu, yüzen değil                                                                                                                                          |
+| K34 | Geri bildirim              | Tarayıcı `confirm/alert` yasak (lint); ortak onay penceresi ve bildirim (toast), "Geri al" düğmeli                                                                                                             |
 
 ---
 

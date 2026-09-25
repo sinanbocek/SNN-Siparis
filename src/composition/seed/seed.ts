@@ -8,22 +8,20 @@ import { DEFAULT_SETTINGS } from "../../domain/settings/settings.ts";
  * MALİYET BURADA YOKTUR (ADR-0002); maliyetler yalnız cihazda, yönetim ekranından girilir.
  */
 
-const COPPER = "#C0703F";
-
 export const SEED_FAMILIES: readonly Family[] = [
   { id: "gardegen", name: "Gardegen", color: "#1E7B45", accent: null, order: 1, active: true },
   { id: "magmeda", name: "Magmeda-6", color: "#3A6EA5", accent: null, order: 2, active: true },
-  { id: "silimagen", name: "Silimagen", color: "#C9A227", accent: null, order: 3, active: true },
+  { id: "silimagen", name: "Silimagen", color: "#8A8F98", accent: null, order: 3, active: true },
   { id: "stomagen", name: "Stomagen", color: "#7B4FA0", accent: null, order: 4, active: true },
   {
     id: "tinagen",
     name: "Tinagen Complex",
     color: "#1F4E8C",
-    accent: COPPER,
+    accent: null,
     order: 5,
     active: true,
   },
-  { id: "vivagen", name: "Vivagen", color: "#2E8B3E", accent: COPPER, order: 6, active: true },
+  { id: "vivagen", name: "Vivagen", color: "#2E8B3E", accent: null, order: 6, active: true },
   {
     id: "d-panthenol",
     name: "D-Panthenol",

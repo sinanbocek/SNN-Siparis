@@ -110,6 +110,48 @@ describe("saha akışı (C + D)", () => {
   });
 });
 
+describe("revizyon 2", () => {
+  it("eczane adında boşluk yazılabilir; telefon yalnız rakam", () => {
+    setup();
+    fireEvent.click(screen.getByRole("button", { name: "Gardegen 60 Kapsül artır" }));
+    fireEvent.click(screen.getAllByRole("button", { name: /^Sepet/ })[0]!);
+    fireEvent.click(screen.getByRole("button", { name: "Siparişi tamamla" }));
+    const name = screen.getByRole("combobox", { name: /Eczane adı/ });
+    fireEvent.change(name, { target: { value: "Şifa " } });
+    expect((name as HTMLInputElement).value).toBe("Şifa ");
+    fireEvent.change(name, { target: { value: "Şifa Eczanesi" } });
+    expect((name as HTMLInputElement).value).toBe("Şifa Eczanesi");
+    const phone = screen.getByRole("textbox", { name: "Eczane telefonu" });
+    fireEvent.change(phone, { target: { value: "0264 abc 123-45-67" } });
+    expect((phone as HTMLInputElement).value).toBe("02641234567");
+  });
+
+  it("sepeti temizle: onay penceresi, sonra 'Geri al' bildirimi", async () => {
+    const { mem } = setup();
+    fireEvent.click(screen.getByRole("button", { name: "Gardegen 60 Kapsül artır" }));
+    fireEvent.click(screen.getAllByRole("button", { name: /^Sepet/ })[0]!);
+    fireEvent.click(screen.getByRole("button", { name: /Sepeti temizle/ }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Sepet temizlensin mi?" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Temizle" }));
+    await waitFor(() => expect(mem.getItem("snn-siparis.cart")).toContain('"lines":[]'));
+    fireEvent.click(await screen.findByRole("button", { name: "Geri al" }));
+    await waitFor(() => expect(mem.getItem("snn-siparis.cart")).toContain("gardegen-60"));
+  });
+
+  it("sepette perakende satış fiyatı yazılınca eczacı kârı ondan hesaplanır", async () => {
+    setup();
+    fireEvent.click(screen.getByRole("button", { name: "Gardegen 60 Kapsül artır" }));
+    fireEvent.click(screen.getAllByRole("button", { name: /^Sepet/ })[0]!);
+    const psf = screen.getByRole("textbox", { name: "Gardegen 60 Kapsül perakende satış fiyatı" });
+    fireEvent.change(psf, { target: { value: "2500" } });
+    fireEvent.blur(psf);
+    // 2.500 ÷ 2.000 − 1 = %25; kazanç 500
+    expect(await screen.findByText("Eczacı kârı %25")).toBeTruthy();
+    const panel = screen.getByRole("complementary", { name: "Eczane kazancı" });
+    expect(within(panel).getByText("₺500,00")).toBeTruthy();
+  });
+});
+
 describe("yönetim", () => {
   it("şifre kendiliğinden denenir: yanlışta açılmaz, 0 ile açılır; telefonda rakam klavyesi", async () => {
     setup();
@@ -165,12 +207,14 @@ describe("sipariş düzenle / sil", () => {
     expect(screen.getByText(/VU-20260925-01 · 25 Eyl\. 11:00/)).toBeTruthy();
   });
 
-  it("sil: onayla kayıttan çıkar", () => {
+  it("sil: uygulamanın onay penceresiyle kayıttan çıkar, bildirim gösterir", async () => {
     const { mem } = withOrder();
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     fireEvent.click(screen.getAllByRole("button", { name: /Siparişler/ })[0]!);
     fireEvent.click(screen.getByRole("button", { name: "VU-20260925-01 sil" }));
-    expect(mem.getItem("snn-siparis.orders")).toContain('"data":[]');
+    const dialog = await screen.findByRole("alertdialog", { name: "Sipariş silinsin mi?" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Sil" }));
+    await waitFor(() => expect(mem.getItem("snn-siparis.orders")).toContain('"data":[]'));
+    expect(await screen.findByText("VU-20260925-01 silindi.")).toBeTruthy();
   });
 
   it("düzenle: aynı numarayla sepete açılır, paylaşınca aynı kayıt güncellenir", async () => {

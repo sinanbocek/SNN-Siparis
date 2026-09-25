@@ -79,8 +79,6 @@ export function CatalogView({ catalog, settings, images, cart, onSetQty }: Props
               <span role="cell">
                 <ProductImage
                   src={src}
-                  color={family.color}
-                  accent={family.accent}
                   title={`${family.name} ${variant.name}`}
                   {...(src !== null && {
                     onOpen: () => setZoom({ src, title: family.name, subtitle: variant.name }),
@@ -91,7 +89,10 @@ export function CatalogView({ catalog, settings, images, cart, onSetQty }: Props
                 <b>{family.name}</b>
                 <small>{variant.name}</small>
                 <span className={styles.phonePrice}>
-                  <b className="num">{fmtMoney(variant.saleMinor)}</b> · PSF {psf}
+                  <span>
+                    Eczaneye <b className="num">{fmtMoney(variant.saleMinor)}</b>
+                  </span>
+                  <span>Perakende Satış Fiyatı {psf}</span>
                 </span>
               </span>
               <span role="cell" className={`num ${styles.colPrice} ${styles.price}`}>

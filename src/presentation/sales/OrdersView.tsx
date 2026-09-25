@@ -11,6 +11,7 @@ import type { PngRenderer, ShareService } from "../../application/ports/devices.
 import { filterOrders, type OrderFilter } from "../../application/session.ts";
 import { orderFileName, type Order } from "../../domain/order/order.ts";
 import { fmtMoney, fmtStamp } from "../parts/format.ts";
+import { useFeedback } from "../parts/feedback.tsx";
 import { Icon, Modal } from "../parts/parts.tsx";
 import { ScaledSheet } from "./ScaledSheet.tsx";
 import styles from "./sales.module.css";
@@ -55,10 +56,15 @@ export function OrdersView({
   );
   const open = orders.find((o) => o.no === openNo);
 
-  const confirmDelete = (order: Order) => {
-    if (!window.confirm(`${order.pharmacy.name} · ${order.no} silinsin mi? Geri alınamaz.`)) {
-      return;
-    }
+  const feedback = useFeedback();
+  const confirmDelete = async (order: Order) => {
+    const ok = await feedback.confirm({
+      title: "Sipariş silinsin mi?",
+      message: `${order.pharmacy.name} · ${order.no} kalıcı olarak silinecek. Geri alınamaz.`,
+      confirmLabel: "Sil",
+      danger: true,
+    });
+    if (!ok) return;
     onDelete(order);
     setOpenNo(null);
   };
@@ -174,14 +180,14 @@ function OrderDetail({
 }) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const feedback = useFeedback();
 
   const produce = async () => {
     if (!sheetRef.current) return null;
     try {
       return await png.render(sheetRef.current);
     } catch {
-      setMessage("Resim üretilemedi.");
+      feedback.toast({ tone: "error", text: "Resim üretilemedi. Tekrar deneyin." });
       return null;
     }
   };
@@ -190,7 +196,11 @@ function OrderDetail({
     // P7: aynı sipariş ikinci kez — uyarı, aynı sipariş no.
     if (
       order.shareCount > 0 &&
-      !window.confirm("Bu sipariş daha önce paylaşıldı. Yine paylaşılsın mı?")
+      !(await feedback.confirm({
+        title: "Yine paylaşılsın mı?",
+        message: `${order.no} daha önce ${order.shareCount} kez paylaşıldı. Aynı numarayla tekrar gönderilecek.`,
+        confirmLabel: "Paylaş",
+      }))
     ) {
       return;
     }
@@ -199,8 +209,12 @@ function OrderDetail({
     if (blob) {
       const outcome = await share.sharePng(blob, orderFileName(order), order.headerTitle);
       if (outcome.kind === "shared" || outcome.kind === "fallback") onReshared(order);
-      if (outcome.kind === "fallback") setMessage("Resim indirildi; WhatsApp Web açıldı.");
-      if (outcome.kind === "failed") setMessage(outcome.message);
+      if (outcome.kind === "shared")
+        feedback.toast({ tone: "success", text: `${order.no} paylaşıldı.` });
+      if (outcome.kind === "fallback") {
+        feedback.toast({ tone: "info", text: "Resim indirildi; WhatsApp Web açıldı." });
+      }
+      if (outcome.kind === "failed") feedback.toast({ tone: "error", text: outcome.message });
     }
     setBusy(false);
   };
@@ -220,7 +234,6 @@ function OrderDetail({
             {fmtStamp(order.createdAt, nowIso)}
             {order.shareCount > 0 ? ` · ${order.shareCount} kez paylaşıldı` : " · paylaşılmadı"}
           </p>
-          {message !== null && <p className={styles.formMessage}>{message}</p>}
           <div className={styles.detailActions}>
             <button
               type="button"

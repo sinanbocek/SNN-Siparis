@@ -22,3 +22,14 @@
 - Para kutusu standardı: sabotaj denemesi yapıldı (`dotAsDecimal` geri konunca 7 test kırmızı).
 - Ölçüm (375×812 ve 1180×820): tüm ekranlarda sayfa genişliği pencereye eşit, yatay taşma yok.
 - SNN-Standartlar PR #109 (aile listesi) arka plan ajanıyla yeşile getirildi, birleştirilmedi.
+
+## 25.09.2026 — revizyon 2 (v0.3.0)
+
+- Proje sahibi: amber yok, "ürün grubu", renk seçici yok, iki yönlü fiyat, "Perakende Satış
+  Fiyatı", boşluk hatası, giriş kutuları (GHS-Panel standardı), koyu tam genişlik gezinme,
+  MF etiketi; araya giren istek: standart onay penceresi + bildirim sistemi.
+- Boşluk hatasının sebebi: kutular kırpılmış sipariş özetinden besleniyordu; ham taslağa bağlandı.
+- Giriş kutusu kuralı GHS-Panel `src/utils/moneyInput.ts`'ten alındı (testleri de uyarlandı).
+- Lint kapısı: `window.confirm/alert/prompt` yasak; sabotaj denemesinde 2 kullanım yakalandı.
+- Ölçüm (375×812 çerçevede): katalog, sepet, siparişlerde taşma yok; alt gezinme tam genişlik.
+- SNN-Standartlar #110 başka oturumda birleşti; #109 açık, proje sahibinin onayını bekliyor.
