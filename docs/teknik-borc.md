@@ -9,8 +9,9 @@ Kapanan kayıtlar: `docs/teknik-borc-arsiv.md`
 > **Standart:** `~/.claude/standartlar-canli/standartlar/teknik-borc-standardi.md` (tek kaynak: SNN-Standartlar)
 
 ## Sözlük
-| Terim | Türkçe karşılığı |
-|---|---|
+
+| Terim | Türkçe karşılığı                            |
+| ----- | ------------------------------------------- |
 | Kütük | Bu dosya: açık teknik borçların tek listesi |
 
 ---
