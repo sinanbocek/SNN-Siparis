@@ -1,5 +1,19 @@
 # Değişiklik Günlüğü
 
+## 0.2.0 — 25.09.2026
+
+Arayüz revizyonu (proje sahibi geri bildirimi).
+
+- Görsel dil SNN-Ihale ile aynı: 14 px yazı, ihale düğme/kutu/kart/sekme stilleri, beyaz üst şerit
+- Para her yerde ABACUS biçiminde (`₺2.000,00`); tarih "25 Eyl. 20:09" / "24 Ara. 2025"
+- Katalog yalnız liste; ürün adı üstte, çeşit altta; görsele dokununca büyük görsel penceresi
+- Siparişler: silme ve düzenleme (aynı numara, paylaşınca kayıt güncellenir)
+- Yönetim: turuncu bant kaldırıldı; şifre kendiliğinden denenir, telefonda rakam klavyesi
+- Telefonda yatay kaydırma yok: fiyatlama ve ürün tabloları kart düzenine geçer
+- Para kutusu aile giriş standardına uyduruldu (belirsiz "98.5" reddedilir; "₺1.234" doğru okunur);
+  adet kutuları `text.digits`
+- Kod dili taraması: 11 bulgu → 0
+
 ## 0.1.0 — 25.09.2026
 
 İlk MVP.

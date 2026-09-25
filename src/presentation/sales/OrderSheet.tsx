@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 import { math } from "@snn/abacus-core";
 import type { Order } from "../../domain/order/order.ts";
-import { amountInWords, fmtAmount, fmtDateTime, fmtMoney, fmtRate } from "../parts/format.ts";
+import { amountInWords, fmtMoney, fmtRate, fmtStamp } from "../parts/format.ts";
 import styles from "./OrderSheet.module.css";
 
 /**
@@ -21,7 +21,7 @@ export const OrderSheet = forwardRef<HTMLDivElement, { order: Order }>(function 
         <div className={styles.title}>
           <b>{order.headerTitle.length > 0 ? order.headerTitle : "Sipariş Formu"}</b>
           <span>{order.no}</span>
-          <span>{fmtDateTime(order.createdAt)}</span>
+          <span>{fmtStamp(order.createdAt, order.createdAt)}</span>
         </div>
       </header>
 
@@ -41,10 +41,10 @@ export const OrderSheet = forwardRef<HTMLDivElement, { order: Order }>(function 
               <span className={styles.lineMain}>
                 <b>{l.label}</b>
                 <span>
-                  {qtyText} × {fmtAmount(l.unitMinor)}
+                  {qtyText} × {fmtMoney(l.unitMinor)}
                 </span>
               </span>
-              <span className={styles.amount}>{fmtAmount(l.amountMinor)}</span>
+              <span className={styles.amount}>{fmtMoney(l.amountMinor)}</span>
             </li>
           );
         })}

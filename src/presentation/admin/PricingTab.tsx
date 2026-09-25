@@ -26,10 +26,10 @@ import {
   type ProfitPolicy,
   type ProfitPolicyKind,
 } from "../../domain/costs/costs.ts";
-import { parseQtyInput } from "../../domain/input/parse.ts";
+import { parseQtyInput, qtyInput } from "../../domain/input/parse.ts";
 import { markupFromPsf, priceWarnings, psfFromSale } from "../../domain/pricing/pricing.ts";
 import type { Settings } from "../../domain/settings/settings.ts";
-import { fmtAmount, fmtMoneyText, fmtRate } from "../parts/format.ts";
+import { fmtMoney, fmtRate } from "../parts/format.ts";
 import { Icon, Modal, MoneyField, RateField } from "../parts/parts.tsx";
 import styles from "./admin.module.css";
 
@@ -78,7 +78,7 @@ export function PricingTab({ state, settings, onChange }: Props) {
           <RateField label="Toplu yüzde" value={bulkRate} onCommit={setBulkRate} placeholder="+5" />
           <button
             type="button"
-            className={styles.secondary}
+            className="btn"
             disabled={bulkRate === null}
             onClick={() => {
               if (bulkRate === null) return;
@@ -98,7 +98,7 @@ export function PricingTab({ state, settings, onChange }: Props) {
           />
           <button
             type="button"
-            className={styles.secondary}
+            className="btn"
             disabled={bulkAmount === null}
             onClick={() => {
               if (bulkAmount === null) return;
@@ -113,7 +113,7 @@ export function PricingTab({ state, settings, onChange }: Props) {
         </div>
         <button
           type="button"
-          className={styles.secondary}
+          className="btn"
           onClick={() => onChange(estimateMissingCosts(state, target))}
         >
           <Icon icon={Calculator01Icon} size={18} /> %40 marjdan tahmin et
@@ -125,12 +125,12 @@ export function PricingTab({ state, settings, onChange }: Props) {
         )}
       </div>
       <p className={styles.note}>
-        Toplu değişiklik sonucu yuvarlama adımına ({fmtMoneyText(step)}) yuvarlanır ve sabit fiyat
-        olur. Tahmin yalnız maliyeti boş ürünlere yazılır.
+        Toplu değişiklik sonucu yuvarlama adımına ({fmtMoney(step)}) yuvarlanır ve sabit fiyat olur.
+        Tahmin yalnız maliyeti boş ürünlere yazılır.
       </p>
 
       <div className={styles.tableWrap}>
-        <table className={styles.table}>
+        <table className={`${styles.table} ${styles.stack}`}>
           <thead>
             <tr>
               <th>
@@ -166,7 +166,7 @@ export function PricingTab({ state, settings, onChange }: Props) {
                   className={v.active ? undefined : styles.inactive}
                   onClick={() => setEditing(v.id)}
                 >
-                  <td onClick={(e) => e.stopPropagation()}>
+                  <td className={styles.cellSelect} onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       aria-label={`${variantLabel(state.catalog, v)} seç`}
@@ -174,22 +174,28 @@ export function PricingTab({ state, settings, onChange }: Props) {
                       onChange={() => toggle(v.id)}
                     />
                   </td>
-                  <td>
+                  <td className={styles.cellName}>
                     <b>{variantLabel(state.catalog, v)}</b>
                   </td>
-                  <td className="num">{fmtAmount(entry.costMinor)}</td>
-                  <td>{policyText(entry.policy)}</td>
-                  <td className="num">
-                    <b>{fmtAmount(v.saleMinor)}</b>
+                  <td className="num" data-label="Maliyet">
+                    {fmtMoney(entry.costMinor)}
                   </td>
-                  <td className="num">{fmtAmount(ourProfit(v.saleMinor, entry.costMinor))}</td>
-                  <td className="num">
-                    {fmtAmount(psf)}
+                  <td data-label="Kâr modu">{policyText(entry.policy)}</td>
+                  <td className="num" data-label="Satış">
+                    <b>{fmtMoney(v.saleMinor)}</b>
+                  </td>
+                  <td className="num" data-label="Bizim kâr">
+                    {fmtMoney(ourProfit(v.saleMinor, entry.costMinor))}
+                  </td>
+                  <td className="num" data-label="PSF">
+                    {fmtMoney(psf)}
                     {v.psf.mode === "fixed" && <small className={styles.tag}>sabit</small>}
                   </td>
-                  <td className="num">{fmtRate(markup)}</td>
-                  <td>{v.mfRule ? `${v.mfRule.every}+${v.mfRule.free}` : "—"}</td>
-                  <td>
+                  <td className="num" data-label="Eczacı">
+                    {fmtRate(markup)}
+                  </td>
+                  <td data-label="MF">{v.mfRule ? `${v.mfRule.every}+${v.mfRule.free}` : "—"}</td>
+                  <td className={styles.cellWarn}>
                     {warnings.includes("sale_not_below_psf") && (
                       <span className={styles.bad} title="Satış fiyatı PSF'ye eşit ya da yüksek">
                         <Icon icon={CancelCircleIcon} size={18} />
@@ -244,7 +250,7 @@ function policyText(policy: ProfitPolicy): string {
     case "fixed_price":
       return "Sabit";
     case "target_profit":
-      return `Maliyet +${fmtAmount(policy.profitMinor)}`;
+      return `Maliyet +${fmtMoney(policy.profitMinor)}`;
   }
 }
 
@@ -370,10 +376,10 @@ function PriceEditor({
         </label>
         <div className={styles.preview}>
           <span>
-            Satış <b className="num">{fmtAmount(effectiveSale)}</b>
+            Satış <b className="num">{fmtMoney(effectiveSale)}</b>
           </span>
           <span>
-            Bizim kâr <b className="num">{fmtAmount(ourProfit(effectiveSale, cost))}</b>
+            Bizim kâr <b className="num">{fmtMoney(ourProfit(effectiveSale, cost))}</b>
           </span>
         </div>
 
@@ -395,7 +401,7 @@ function PriceEditor({
         ) : (
           <label>
             <span>
-              Ürüne özel eczacı oranı (boş = {fmtRate(settings.defaultPharmacistMarkup, 0)})
+              {`Ürüne özel eczacı oranı (boş = ${fmtRate(settings.defaultPharmacistMarkup, 0)})`}
             </span>
             <RateField
               label="Eczacı oranı"
@@ -407,7 +413,7 @@ function PriceEditor({
         )}
         <div className={styles.preview}>
           <span>
-            PSF <b className="num">{fmtAmount(psf)}</b>
+            PSF <b className="num">{fmtMoney(psf)}</b>
           </span>
           <span>
             Eczacı{" "}
@@ -427,7 +433,7 @@ function PriceEditor({
 
         <label>
           <span>
-            KDV (boş = {fmtRate(effectiveVat({ ...variant, vatRate: null }, settings), 0)})
+            {`KDV (boş = ${fmtRate(effectiveVat({ ...variant, vatRate: null }, settings), 0)})`}
           </span>
           <RateField label="KDV" value={vat} onCommit={setVat} placeholder="varsayılan" />
         </label>
@@ -438,7 +444,7 @@ function PriceEditor({
             inputMode="numeric"
             placeholder="10"
             value={mfEvery}
-            onChange={(e) => setMfEvery(e.target.value.replace(/\D/g, ""))}
+            onChange={(e) => setMfEvery(qtyInput(e.target.value))}
           />
           <span>alana</span>
           <input
@@ -446,17 +452,17 @@ function PriceEditor({
             inputMode="numeric"
             placeholder="1"
             value={mfFree}
-            onChange={(e) => setMfFree(e.target.value.replace(/\D/g, ""))}
+            onChange={(e) => setMfFree(qtyInput(e.target.value))}
           />
           <span>bedava</span>
         </fieldset>
 
         {error !== null && <p className={styles.errorText}>{error}</p>}
         <div className={styles.actions}>
-          <button type="button" className={styles.secondary} onClick={onClose}>
+          <button type="button" className="btn" onClick={onClose}>
             Vazgeç
           </button>
-          <button type="button" className={styles.primary} onClick={save}>
+          <button type="button" className="btnPrimary" onClick={save}>
             Kaydet
           </button>
         </div>

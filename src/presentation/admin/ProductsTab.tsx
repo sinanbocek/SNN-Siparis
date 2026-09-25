@@ -237,18 +237,14 @@ export function ProductsTab({
                     >
                       <Icon icon={ArrowDown01Icon} size={18} />
                     </button>
-                    <button
-                      type="button"
-                      className={styles.dangerButton}
-                      onClick={() => removeFamily(f)}
-                    >
+                    <button type="button" className="btnDanger" onClick={() => removeFamily(f)}>
                       <Icon icon={Delete02Icon} size={18} /> Aileyi sil
                     </button>
                   </div>
                 </div>
               </div>
 
-              <table className={styles.table}>
+              <table className={`${styles.table} ${styles.stack}`}>
                 <thead>
                   <tr>
                     <th>Çeşit</th>
@@ -263,14 +259,14 @@ export function ProductsTab({
                     const key = `variant:${v.id}`;
                     return (
                       <tr key={v.id} className={v.active ? undefined : styles.inactive}>
-                        <td>
+                        <td data-label="Çeşit">
                           <input
                             aria-label="Çeşit adı"
                             value={v.name}
                             onChange={(e) => patchVariant(v.id, { name: e.target.value })}
                           />
                         </td>
-                        <td>
+                        <td data-label="Birim">
                           <input
                             aria-label="Birim"
                             className={styles.short}
@@ -278,7 +274,7 @@ export function ProductsTab({
                             onChange={(e) => patchVariant(v.id, { unit: e.target.value })}
                           />
                         </td>
-                        <td>
+                        <td data-label="Yayında">
                           <input
                             type="checkbox"
                             aria-label="Yayında"
@@ -286,7 +282,7 @@ export function ProductsTab({
                             onChange={(e) => patchVariant(v.id, { active: e.target.checked })}
                           />
                         </td>
-                        <td>
+                        <td data-label="Görsel">
                           <label className={styles.uploadButton}>
                             <Icon icon={Image01Icon} size={16} />
                             {userImages[key] !== undefined || images[key] !== undefined
@@ -309,7 +305,7 @@ export function ProductsTab({
                             </button>
                           )}
                         </td>
-                        <td className={styles.rowActions}>
+                        <td className={styles.rowActions} data-label="">
                           <button
                             type="button"
                             className={styles.iconButton}
@@ -352,7 +348,7 @@ export function ProductsTab({
                   })}
                 </tbody>
               </table>
-              <button type="button" className={styles.secondary} onClick={() => addVariant(f.id)}>
+              <button type="button" className="btn" onClick={() => addVariant(f.id)}>
                 <Icon icon={PlusSignIcon} size={16} /> Çeşit ekle
               </button>
               {variants.some((v) => v.saleMinor === null) && (
@@ -364,7 +360,7 @@ export function ProductsTab({
           );
         })}
       </div>
-      <button type="button" className={styles.primary} onClick={addFamily}>
+      <button type="button" className="btnPrimary" onClick={addFamily}>
         <Icon icon={PlusSignIcon} size={18} /> Ürün ailesi ekle
       </button>
     </div>

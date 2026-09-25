@@ -1,6 +1,6 @@
 import type { Rate } from "../../domain/abacus/index.ts";
 import { ROUNDING_STEPS, type Settings } from "../../domain/settings/settings.ts";
-import { fmtMoneyText } from "../parts/format.ts";
+import { fmtMoney } from "../parts/format.ts";
 import { RateField } from "../parts/parts.tsx";
 import styles from "./admin.module.css";
 
@@ -79,7 +79,7 @@ export function SettingsTab({ settings, onChange }: Props) {
         >
           {ROUNDING_STEPS.map((s) => (
             <option key={s} value={s}>
-              {STEP_LABELS[s] ?? fmtMoneyText(s)}
+              {STEP_LABELS[s] ?? fmtMoney(s)}
             </option>
           ))}
         </select>

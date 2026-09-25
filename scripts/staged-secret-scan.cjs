@@ -9,7 +9,7 @@ const { homedir } = require("node:os");
 const path = require("node:path");
 
 const scannerPath =
-  process.env.SNN_ANAHTAR_TARAMA ??
+  process.env.SNN_SECRET_SCAN ??
   path.join(homedir(), ".claude", "standartlar-canli", "quality", "secret-scan.js");
 
 if (!existsSync(scannerPath)) {

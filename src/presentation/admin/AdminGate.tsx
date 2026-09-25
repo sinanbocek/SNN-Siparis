@@ -152,6 +152,7 @@ export default function AdminGate({ costStore, base }: AdminGateProps) {
         userImages={base.userImages}
         resizer={base.resizer}
         lastBackupAt={lastBackup}
+        nowIso={base.now()}
         backupStale={backupStale}
         usageBytes={base.usageBytes}
         onPricingChange={applyPricing}

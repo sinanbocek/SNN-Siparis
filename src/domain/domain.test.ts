@@ -8,7 +8,14 @@ import {
   saleFromPolicy,
   type ProfitPolicy,
 } from "./costs/costs.ts";
-import { parseMoneyInput, parseQtyInput, parseRateInput, rateToInput } from "./input/parse.ts";
+import {
+  moneyInput,
+  parseMoneyInput,
+  parseQtyInput,
+  parseRateInput,
+  qtyInput,
+  rateToInput,
+} from "./input/parse.ts";
 import { buildOrder, nextOrderNo, orderFileName, type Order } from "./order/order.ts";
 import { priceWarnings, psfFromSale, roundToStep } from "./pricing/pricing.ts";
 import { DEFAULT_SETTINGS } from "./settings/settings.ts";
@@ -266,5 +273,54 @@ describe("giriş okuma (H6)", () => {
     [0.01, "1"],
   ])("oran kutusu %d → %s", (rate, shown) => {
     expect(rateToInput(rate)).toBe(shown);
+  });
+});
+
+describe("para kutusu — giriş alanları standardı §1", () => {
+  /** Tuş tuş yazmayı taklit eder. */
+  function typeInto(keys: string): string {
+    let shown = "";
+    for (const key of keys) {
+      const result = moneyInput(shown + key, shown);
+      shown = result.text;
+    }
+    return shown;
+  }
+
+  it("tuş tuş 85340,50 → 85.340,50 ve kuruş korunur", () => {
+    expect(typeInto("85340,50")).toBe("85.340,50");
+    expect(parseMoneyInput("85.340,50")).toBe(8534050);
+  });
+
+  it.each([
+    ["85.340,50", "85.340,50", 8534050],
+    ["₺1.234", "1.234", 123400],
+    ["₺1.234,56", "1.234,56", 123456],
+    ["12.500", "12.500", 1250000],
+  ])("yapıştırma %s → %s (100/1000 kat sapma yok)", (pasted, shown, minor) => {
+    const result = moneyInput(pasted, "");
+    expect(result).toEqual({ text: shown, rejected: false });
+    expect(parseMoneyInput(result.text)).toBe(minor);
+  });
+
+  it.each([["98.5"], ["1.23"], ["12.5000"]])(
+    "belirsiz %s sessizce çevrilmez, reddedilir",
+    (pasted) => {
+      expect(moneyInput(pasted, "")).toEqual({ text: "", rejected: true });
+    },
+  );
+
+  it("kullanıcı nokta tuşuna basarsa reddedilir; silme serbest", () => {
+    expect(moneyInput("98.", "98")).toEqual({ text: "98", rejected: true });
+    expect(moneyInput("1.23", "1.234")).toEqual({ text: "123", rejected: false });
+  });
+
+  it("üçüncü kuruş hanesi ve harf kutuya girmez", () => {
+    expect(typeInto("1234,567")).toBe("1.234,56");
+    expect(typeInto("12a3")).toBe("123");
+  });
+
+  it("adet: yalnız rakam, en çok 4 hane (ABACUS text.digits)", () => {
+    expect(qtyInput("12a345")).toBe("1234");
   });
 });
