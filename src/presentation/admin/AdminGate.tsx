@@ -143,6 +143,8 @@ export default function AdminGate({ costStore, base }: AdminGateProps) {
       )}
       <AdminView
         pricing={pricing}
+        orders={base.orders}
+        today={base.today}
         settings={base.settings}
         images={base.images}
         userImages={base.userImages}

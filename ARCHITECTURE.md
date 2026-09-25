@@ -32,14 +32,14 @@ src/
     settings/      ayarlar ve varsayılanlar
   application/
     ports/         depo ve cihaz portları
-    admin/         fiyat işlemleri, yedek, maliyet deposu portu
+    admin/         fiyat işlemleri, yedek, maliyet deposu portu, raporlar, örnek veri
     validation.ts  cihazdan/yedekten okunan verinin şekil denetimi
     session.ts     görsel seçimi, arama, sipariş süzgeci, İstanbul günü
   infrastructure/  localStorage, Web Share, html-to-image, görsel küçültme
   presentation/
     parts/         ortak parçalar, biçim yardımcıları
     sales/         katalog, sepet, tamamla, sipariş resmi, siparişler
-    admin/         kilit, fiyatlama, ürünler, ayarlar, veri
+    admin/         kilit, raporlar (SVG grafikler), fiyatlama, ürünler, ayarlar, veri
     app/           kabuk: gezinme, veri yükleme/kaydetme, bantlar
   composition/
     app/main.tsx   tek bağlama noktası

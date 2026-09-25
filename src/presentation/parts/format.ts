@@ -12,7 +12,7 @@ export const DASH = "—";
 export function fmtMoney(minor: MinorAmount | null): string {
   if (minor === null) return DASH;
   // eslint-disable-next-line no-restricted-properties -- girdi kuruş (MinorAmount)
-  return money.format(minor, { kurus: true });
+  return money.format(minor, { kurus: true, zero: "symbol" });
 }
 
 /** Oran: 0.2 → %20; 0.3605 → %36,1. */
