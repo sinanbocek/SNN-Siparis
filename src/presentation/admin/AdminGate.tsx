@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { backupFileName, buildBackup, type BackupFile } from "../../application/admin/backup.ts";
-import { ADMIN_IDLE_MS, BACKUP_STALE_DAYS, type CostStore } from "../../application/admin/ports.ts";
+import { ADMIN_IDLE_MS, type CostStore } from "../../application/admin/ports.ts";
 import { rederiveSales, type PricingState } from "../../application/admin/pricing.ts";
 import type { ImageResizer } from "../../application/ports/devices.ts";
 import type { ImageMap, Meta } from "../../application/ports/stores.ts";
-import { istanbulDay } from "../../application/session.ts";
-import { date } from "@snn/abacus-core";
 import type { Catalog } from "../../domain/catalog/catalog.ts";
 import type { CostBook } from "../../domain/costs/costs.ts";
 import type { Order } from "../../domain/order/order.ts";
@@ -109,8 +107,6 @@ export default function AdminGate({ costStore, base }: AdminGateProps) {
   };
 
   const lastBackup = base.meta.lastBackupAt;
-  const age = lastBackup === null ? null : date.daysBetween(istanbulDay(lastBackup), base.today);
-  const backupStale = age === null || age > BACKUP_STALE_DAYS;
 
   const onExport = (withCosts: boolean, withImages: boolean) => {
     const exportedAt = base.now();
@@ -153,7 +149,6 @@ export default function AdminGate({ costStore, base }: AdminGateProps) {
         resizer={base.resizer}
         lastBackupAt={lastBackup}
         nowIso={base.now()}
-        backupStale={backupStale}
         usageBytes={base.usageBytes}
         onPricingChange={applyPricing}
         onCatalogChange={base.onCatalogChange}

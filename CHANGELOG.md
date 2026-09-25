@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## 0.3.1 — 25.09.2026
+
+- "Son yedek 7 günden eski" uyarısı kaldırıldı (yönetim üstü ve Veri sekmesi)
+
 ## 0.3.0 — 25.09.2026
 
 Revizyon 2 (proje sahibi geri bildirimi).
