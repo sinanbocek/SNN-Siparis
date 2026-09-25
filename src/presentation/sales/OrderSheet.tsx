@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 import { math } from "@snn/abacus-core";
+import { phoneDisplay } from "../../domain/input/parse.ts";
 import type { Order } from "../../domain/order/order.ts";
 import { amountInWords, fmtMoney, fmtRate, fmtStamp } from "../parts/format.ts";
 import styles from "./OrderSheet.module.css";
@@ -28,7 +29,7 @@ export const OrderSheet = forwardRef<HTMLDivElement, { order: Order }>(function 
       <section className={styles.pharmacy}>
         <b>{p.name}</b>
         {place.length > 0 && <span>{place}</span>}
-        {p.phone.length > 0 && <span>Tel: {p.phone}</span>}
+        {p.phone.length > 0 && <span>Tel: {phoneDisplay(p.phone)}</span>}
       </section>
 
       <ol className={styles.lines}>
@@ -72,7 +73,7 @@ export const OrderSheet = forwardRef<HTMLDivElement, { order: Order }>(function 
 
       <footer className={styles.foot}>
         <span>
-          Pazarlamacı: <b>{order.repName}</b> · {order.repPhone}
+          Pazarlamacı: <b>{order.repName}</b> · {phoneDisplay(order.repPhone)}
         </span>
         <span>Fiyatlar KDV hariçtir.</span>
       </footer>

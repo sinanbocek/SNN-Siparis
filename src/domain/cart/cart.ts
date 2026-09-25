@@ -9,7 +9,7 @@ import {
   type MfRule,
   type Variant,
 } from "../catalog/catalog.ts";
-import { psfFromSale, vatOnMinor } from "../pricing/pricing.ts";
+import { markupFromPsf, psfFromSale, vatOnMinor } from "../pricing/pricing.ts";
 import type { Settings } from "../settings/settings.ts";
 
 /** Adet sınırı (H1): yalnız 1–9.999 tam sayı; 0 satırı kaldırır. */
@@ -31,6 +31,11 @@ export interface CartLine {
   readonly mfOverride: number | null;
   /** Satıra özel eczacı oranı; null = sepet/katalog. */
   readonly markupOverride: Rate | null;
+  /**
+   * Satıra elle yazılan perakende satış fiyatı (iki yönlü hesap): varsa oran bundan geri
+   * hesaplanır ve oran değişikliklerini ezer. Eski kayıtlarda yoktur.
+   */
+  readonly psfOverride?: MinorAmount;
   /** Satıra eklendiği andaki birim fiyat; değişirse "fiyat güncellendi" rozeti (D8). */
   readonly unitAtAdd: MinorAmount;
 }
@@ -107,6 +112,9 @@ export interface LineSummary {
   readonly unitMinor: MinorAmount;
   readonly amountMinor: MinorAmount;
   readonly psfMinor: MinorAmount;
+  /** Bu satırda eczacının kârı: PSF ÷ satış − 1. */
+  readonly lineMarkup: Rate | null;
+  readonly psfOverridden: boolean;
   readonly vatRate: Rate;
   readonly markupOverride: Rate | null;
   readonly priceChanged: boolean;
@@ -147,6 +155,7 @@ function linePsf(
   cart: Cart,
   settings: Settings,
 ): MinorAmount | null {
+  if (line.psfOverride !== undefined) return line.psfOverride;
   const override = line.markupOverride ?? cart.markupOverride;
   if (override !== null) return psfFromSale(saleMinor, override, settings.roundingStepMinor);
   return variantPsf(variant, settings);
@@ -180,6 +189,8 @@ export function summarizeCart(catalog: Catalog, settings: Settings, cart: Cart):
       unitMinor: variant.saleMinor,
       amountMinor: math.mul(line.qty, variant.saleMinor),
       psfMinor: psf,
+      lineMarkup: markupFromPsf(variant.saleMinor, psf),
+      psfOverridden: line.psfOverride !== undefined,
       vatRate: effectiveVat(variant, settings),
       markupOverride: line.markupOverride,
       priceChanged: line.unitAtAdd !== variant.saleMinor,
@@ -226,4 +237,28 @@ export function summarizeCart(catalog: Catalog, settings: Settings, cart: Cart):
 export function pruneCart(cart: Cart, droppedVariantIds: readonly string[]): Cart {
   if (droppedVariantIds.length === 0) return cart;
   return { ...cart, lines: cart.lines.filter((l) => !droppedVariantIds.includes(l.variantId)) };
+}
+
+/** Satırın perakende satış fiyatını elle ayarlar (null = hesaplanana dön). */
+export function setLinePsf(cart: Cart, variantId: string, psf: MinorAmount | null): Cart {
+  return {
+    ...cart,
+    lines: cart.lines.map((l) => {
+      if (l.variantId !== variantId) return l;
+      const { psfOverride: _old, ...rest } = l;
+      return psf === null ? rest : { ...rest, psfOverride: psf, markupOverride: null };
+    }),
+  };
+}
+
+/** Sepet oranını değiştirir; satırlardaki elle fiyat ve oranlar bu orana döner. */
+export function setCartMarkup(cart: Cart, markup: Rate | null): Cart {
+  return {
+    ...cart,
+    markupOverride: markup,
+    lines: cart.lines.map((l) => {
+      const { psfOverride: _old, ...rest } = l;
+      return { ...rest, markupOverride: null };
+    }),
+  };
 }

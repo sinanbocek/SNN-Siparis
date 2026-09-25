@@ -3,6 +3,8 @@ import { math } from "@snn/abacus-core";
 import { useState } from "react";
 import {
   MAX_QTY,
+  setCartMarkup,
+  setLinePsf,
   setQty,
   updateLine,
   type Cart,
@@ -12,7 +14,7 @@ import {
 import { findVariant, type Catalog } from "../../domain/catalog/catalog.ts";
 import { parseQtyInput, qtyInput } from "../../domain/input/parse.ts";
 import { fmtMoney, fmtRate } from "../parts/format.ts";
-import { Icon, RateField, Stepper } from "../parts/parts.tsx";
+import { Icon, MoneyField, Stepper } from "../parts/parts.tsx";
 import styles from "./sales.module.css";
 
 interface Props {
@@ -62,7 +64,7 @@ export function CartView({
   const changeMarkup = (delta: number) => {
     const next = math.round(math.add(markup, delta), 4);
     if (next < 0 || next > 3) return;
-    onCartChange({ ...cart, markupOverride: next });
+    onCartChange(setCartMarkup(cart, next));
   };
 
   return (
@@ -116,9 +118,7 @@ export function CartView({
                     }),
                   )
                 }
-                onMarkup={(rate) =>
-                  onCartChange(updateLine(cart, line.variantId, { markupOverride: rate }))
-                }
+                onPsf={(psf) => onCartChange(setLinePsf(cart, line.variantId, psf))}
               />
             ))}
           </div>
@@ -200,7 +200,7 @@ export function CartView({
             <button
               type="button"
               className={styles.offerLink}
-              onClick={() => onCartChange({ ...cart, markupOverride: null })}
+              onClick={() => onCartChange(setCartMarkup(cart, null))}
             >
               Varsayılan orana dön
             </button>
@@ -215,50 +215,48 @@ function CartLineRow({
   line,
   onQty,
   onMf,
-  onMarkup,
+  onPsf,
 }: {
   line: LineSummary;
   onQty: (qty: number) => void;
   onMf: (mf: number) => void;
-  onMarkup: (rate: number | null) => void;
+  onPsf: (psf: number | null) => void;
 }) {
-  const [editPsf, setEditPsf] = useState(false);
   return (
     <div className={styles.cartRow} role="row">
       <span role="cell" className={styles.name}>
         <b>{line.familyName}</b>
         <small>{line.variantName}</small>
         <span className={styles.lineMeta}>
-          <button
-            type="button"
-            className={styles.psfButton}
-            onClick={() => setEditPsf((v) => !v)}
-            aria-expanded={editPsf}
-          >
-            PSF {fmtMoney(line.psfMinor)}
-            {line.markupOverride !== null && ` · ${fmtRate(line.markupOverride, 1)}`}
-          </button>
-          <span className={styles.phoneUnit}>× {fmtMoney(line.unitMinor)}</span>
+          <span className={styles.phoneUnit}>Birim {fmtMoney(line.unitMinor)}</span>
           {line.priceChanged && <span className={styles.badge}>fiyat güncellendi</span>}
         </span>
-        {editPsf && (
-          <span className={styles.psfEdit}>
-            <RateField
-              label={`${line.label} eczacı oranı`}
-              value={line.markupOverride}
-              placeholder="sepet oranı"
-              onCommit={(rate) => onMarkup(rate)}
-            />
+        <span className={styles.psfEdit}>
+          <span className={styles.cellLabel}>Perakende Satış Fiyatı</span>
+          <MoneyField
+            label={`${line.label} perakende satış fiyatı`}
+            value={line.psfMinor}
+            onCommit={(psf) => onPsf(psf)}
+          />
+          <span className={styles.psfRate}>
+            Eczacı kârı {fmtRate(line.lineMarkup)}
+            {line.psfOverridden && (
+              <button type="button" className={styles.psfReset} onClick={() => onPsf(null)}>
+                orana dön
+              </button>
+            )}
           </span>
-        )}
+        </span>
       </span>
       <span role="cell" className={`num ${styles.colUnit}`}>
         {fmtMoney(line.unitMinor)}
       </span>
-      <span role="cell" className={styles.center}>
+      <span role="cell" className={styles.qtyCell}>
+        <span className={styles.cellLabel}>Adet</span>
         <Stepper value={line.qty} label={line.label} onChange={onQty} />
       </span>
-      <span role="cell" className={styles.center}>
+      <span role="cell" className={styles.qtyCell}>
+        <span className={styles.cellLabel}>MF (bedava)</span>
         <MfInput value={line.mf} fromRule={line.mfFromRule} label={line.label} onCommit={onMf} />
       </span>
       <span role="cell" className={`num ${styles.amount}`}>

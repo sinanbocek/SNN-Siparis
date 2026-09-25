@@ -3,12 +3,16 @@ import { useId, useRef, useState } from "react";
 import type { PngRenderer, ShareService } from "../../application/ports/devices.ts";
 import type { PharmacyDraft } from "../../domain/cart/cart.ts";
 import { canShare, orderFileName, type Order } from "../../domain/order/order.ts";
-import { Icon, Modal } from "../parts/parts.tsx";
+import { useFeedback } from "../parts/feedback.tsx";
+import { Icon, Modal, PhoneField } from "../parts/parts.tsx";
 import { ScaledSheet } from "./ScaledSheet.tsx";
 import styles from "./sales.module.css";
 
 interface Props {
   order: Order;
+  /** Kutuların gösterdiği ham taslak (kırpılmaz; boşluk yazılabilsin). */
+  pharmacy: PharmacyDraft;
+  note: string;
   suggestions: readonly string[];
   share: ShareService;
   png: PngRenderer;
@@ -23,6 +27,8 @@ interface Props {
 /** Siparişi tamamla (PRD §4-D, §5.5): form + canlı PNG önizlemesi + paylaşım. */
 export function CheckoutDialog({
   order,
+  pharmacy,
+  note,
   suggestions,
   share,
   png,
@@ -35,9 +41,9 @@ export function CheckoutDialog({
   const sheetRef = useRef<HTMLDivElement>(null);
   const listId = useId();
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const feedback = useFeedback();
   const ready = canShare(order.pharmacy, order.lines.length);
-  const p = order.pharmacy;
+  const p = pharmacy;
   const set = (patch: Partial<PharmacyDraft>) => onPharmacyChange({ ...p, ...patch });
 
   const produce = async (): Promise<Blob | null> => {
@@ -45,7 +51,7 @@ export function CheckoutDialog({
     try {
       return await png.render(sheetRef.current);
     } catch {
-      setMessage("Resim üretilemedi. Tekrar deneyin.");
+      feedback.toast({ tone: "error", text: "Resim üretilemedi. Tekrar deneyin." });
       return null;
     }
   };
@@ -53,19 +59,20 @@ export function CheckoutDialog({
   const onShare = async () => {
     if (!ready || busy) return;
     setBusy(true);
-    setMessage(null);
     const blob = await produce();
     if (blob) {
       const outcome = await share.sharePng(blob, orderFileName(order), order.headerTitle);
       if (outcome.kind === "shared") onShared(order);
       else if (outcome.kind === "fallback") {
-        setMessage(
-          outcome.copied
+        feedback.toast({
+          tone: "info",
+          text: outcome.copied
             ? "Resim indirildi ve panoya kopyalandı. WhatsApp Web'de depo sohbetine yapıştırın."
             : "Resim indirildi. WhatsApp Web'de depo sohbetine dosyayı ekleyin.",
-        );
+        });
         onShared(order);
-      } else if (outcome.kind === "failed") setMessage(outcome.message);
+      } else if (outcome.kind === "failed")
+        feedback.toast({ tone: "error", text: outcome.message });
     }
     setBusy(false);
   };
@@ -84,7 +91,11 @@ export function CheckoutDialog({
     const blob = await produce();
     if (blob) {
       const ok = await share.copyImage(blob);
-      setMessage(ok ? "Resim panoya kopyalandı." : "Bu tarayıcı resmi panoya kopyalayamıyor.");
+      feedback.toast(
+        ok
+          ? { tone: "success", text: "Resim panoya kopyalandı." }
+          : { tone: "error", text: "Bu tarayıcı resmi panoya kopyalayamıyor." },
+      );
     }
     setBusy(false);
   };
@@ -123,18 +134,16 @@ export function CheckoutDialog({
           </label>
           <label className="field">
             <span>Telefon</span>
-            <input
-              inputMode="tel"
+            <PhoneField
+              label="Eczane telefonu"
               value={p.phone}
-              onChange={(e) => set({ phone: e.target.value })}
+              onChange={(phone) => set({ phone })}
             />
           </label>
           <label className="field">
             <span>Not</span>
-            <textarea value={order.note} onChange={(e) => onNoteChange(e.target.value)} />
+            <textarea value={note} onChange={(e) => onNoteChange(e.target.value)} />
           </label>
-
-          {message !== null && <p className={styles.formMessage}>{message}</p>}
 
           <div className={styles.shareButtons}>
             <button

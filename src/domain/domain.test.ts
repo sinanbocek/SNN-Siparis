@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { SEED_CATALOG, SEED_PSF_MINOR, SEED_VARIANTS } from "../composition/seed/seed.ts";
 import { findVariant, variantPsf, type Catalog } from "./catalog/catalog.ts";
-import { EMPTY_CART, mfFromRule, setQty, summarizeCart, updateLine } from "./cart/cart.ts";
+import {
+  EMPTY_CART,
+  mfFromRule,
+  setCartMarkup,
+  setLinePsf,
+  setQty,
+  summarizeCart,
+  updateLine,
+} from "./cart/cart.ts";
 import {
   estimateCostFromSale,
   ourProfit,
@@ -9,10 +17,13 @@ import {
   type ProfitPolicy,
 } from "./costs/costs.ts";
 import {
-  moneyInput,
+  MONEY_INPUT_MESSAGES,
+  moneyInputStep,
   parseMoneyInput,
   parseQtyInput,
   parseRateInput,
+  phoneDisplay,
+  phoneInput,
   qtyInput,
   rateToInput,
 } from "./input/parse.ts";
@@ -170,6 +181,20 @@ describe("sepet hesabı", () => {
     expect(settings.defaultPharmacistMarkup).toBe(0.2);
   });
 
+  it("iki yönlü: satıra PSF yazılınca oran geri hesaplanır; sepet oranı elle fiyatları sıfırlar", () => {
+    const withPsf = setLinePsf(base, "gardegen-60", 250000);
+    const s = summarizeCart(SEED_CATALOG, settings, withPsf);
+    expect(s.lines[0]).toMatchObject({ psfMinor: 250000, lineMarkup: 0.25, psfOverridden: true });
+    // 10 × 2.500 + 12 × 990 = 36.880 → kazanç 6.980
+    expect(s.pharmacistProfitMinor).toBe(698000);
+    const back = summarizeCart(SEED_CATALOG, settings, setCartMarkup(withPsf, 0.3));
+    expect(back.lines[0]).toMatchObject({ psfMinor: 260000, psfOverridden: false });
+    expect(
+      summarizeCart(SEED_CATALOG, settings, setLinePsf(withPsf, "gardegen-60", null)).lines[0]
+        ?.psfMinor,
+    ).toBe(240000);
+  });
+
   it("karma KDV oranları ayrı gruplanır (H7)", () => {
     const catalog: Catalog = {
       ...SEED_CATALOG,
@@ -276,18 +301,18 @@ describe("giriş okuma (H6)", () => {
   });
 });
 
-describe("para kutusu — giriş alanları standardı §1", () => {
-  /** Tuş tuş yazmayı taklit eder. */
+describe("para kutusu — giriş alanları standardı §1 (GHS-Panel moneyInputStep)", () => {
+  /** Tuş tuş yazmayı taklit eder; reddedilen tuş kutuyu değiştirmez. */
   function typeInto(keys: string): string {
     let shown = "";
     for (const key of keys) {
-      const result = moneyInput(shown + key, shown);
-      shown = result.text;
+      const step = moneyInputStep(shown, shown + key);
+      if (step.ok) shown = step.text;
     }
     return shown;
   }
 
-  it("tuş tuş 85340,50 → 85.340,50 ve kuruş korunur", () => {
+  it("tuş tuş 85340,50 → 85.340,50; binlik kendiliğinden, kuruş korunur", () => {
     expect(typeInto("85340,50")).toBe("85.340,50");
     expect(parseMoneyInput("85.340,50")).toBe(8534050);
   });
@@ -298,29 +323,36 @@ describe("para kutusu — giriş alanları standardı §1", () => {
     ["₺1.234,56", "1.234,56", 123456],
     ["12.500", "12.500", 1250000],
   ])("yapıştırma %s → %s (100/1000 kat sapma yok)", (pasted, shown, minor) => {
-    const result = moneyInput(pasted, "");
-    expect(result).toEqual({ text: shown, rejected: false });
-    expect(parseMoneyInput(result.text)).toBe(minor);
+    expect(moneyInputStep("", pasted)).toEqual({ ok: true, text: shown });
+    expect(parseMoneyInput(shown)).toBe(minor);
   });
 
-  it.each([["98.5"], ["1.23"], ["12.5000"]])(
-    "belirsiz %s sessizce çevrilmez, reddedilir",
-    (pasted) => {
-      expect(moneyInput(pasted, "")).toEqual({ text: "", rejected: true });
-    },
-  );
-
-  it("kullanıcı nokta tuşuna basarsa reddedilir; silme serbest", () => {
-    expect(moneyInput("98.", "98")).toEqual({ text: "98", rejected: true });
-    expect(moneyInput("1.23", "1.234")).toEqual({ text: "123", rejected: false });
+  it.each([
+    ["98.5", MONEY_INPUT_MESSAGES.useComma],
+    ["1.23", MONEY_INPUT_MESSAGES.useComma],
+    ["12a", MONEY_INPUT_MESSAGES.invalidChar],
+    ["-100", MONEY_INPUT_MESSAGES.invalidChar],
+    ["1,2,3", MONEY_INPUT_MESSAGES.oneComma],
+  ])("reddedilir %s", (pasted, message) => {
+    expect(moneyInputStep("", pasted)).toEqual({ ok: false, message });
   });
 
-  it("üçüncü kuruş hanesi ve harf kutuya girmez", () => {
+  it("nokta tuşu reddedilir; silme serbest", () => {
+    expect(moneyInputStep("98", "98.")).toEqual({
+      ok: false,
+      message: MONEY_INPUT_MESSAGES.useComma,
+    });
+    expect(moneyInputStep("1.234", "1.23")).toEqual({ ok: true, text: "123" });
+  });
+
+  it("harf ve üçüncü kuruş hanesi kutuya girmez", () => {
     expect(typeInto("1234,567")).toBe("1.234,56");
     expect(typeInto("12a3")).toBe("123");
   });
 
-  it("adet: yalnız rakam, en çok 4 hane (ABACUS text.digits)", () => {
+  it("adet ve telefon: yalnız rakam (ABACUS text.digits)", () => {
     expect(qtyInput("12a345")).toBe("1234");
+    expect(phoneInput("0532 abc 123-45-67 99")).toBe("05321234567");
+    expect(phoneDisplay("05321234567")).toBe("+90 (532) 123 45 67");
   });
 });

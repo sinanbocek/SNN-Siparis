@@ -1,5 +1,18 @@
 # Değişiklik Günlüğü
 
+## 0.3.0 — 25.09.2026
+
+Revizyon 2 (proje sahibi geri bildirimi).
+
+- Ortak onay penceresi ve bildirim sistemi (`useFeedback`); tarayıcı `confirm/alert` lint ile yasak
+- Sepette perakende satış fiyatı yazılabilir; eczacı kârı fiyattan geri hesaplanır (iki yönlü)
+- Tutar ve oran kutuları GHS-Panel standardında; telefon kutuları yalnız rakam; sipariş resminde
+  telefon "+90 (5xx) …" biçiminde
+- Eczane adı ve not kutusunda boşluk yazılamama hatası düzeltildi
+- "Aile" yerine "Ürün grubu"; renk seçici kaldırıldı; amber rengi kaldırıldı
+- "PSF" yerine metinlerde "Perakende Satış Fiyatı"
+- Koyu üst şerit; telefonda tam genişlik koyu alt gezinme; adet ve MF kutularına etiket
+
 ## 0.2.0 — 25.09.2026
 
 Arayüz revizyonu (proje sahibi geri bildirimi).

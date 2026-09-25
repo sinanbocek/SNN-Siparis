@@ -20,6 +20,13 @@ const FORMAT_BANS = [
   { property: "toFixed", message: "Yuvarlama/biçim yalnız ABACUS." },
 ];
 
+/** Tarayıcının onay/uyarı kutuları yasak: ortak onay penceresi ve bildirim (useFeedback). */
+const DIALOG_BANS = ["confirm", "alert", "prompt"].map((property) => ({
+  object: "window",
+  property,
+  message: "Tarayıcı kutusu yasak; presentation/parts/feedback.tsx useFeedback() kullanın.",
+}));
+
 const LOCAL_SYNTAX_BANS = [
   {
     selector: "MemberExpression[object.name='Math']",
@@ -101,6 +108,14 @@ export default tseslint.config(
         ...abacus.minorUnitGates,
         ...abacus.formatGates,
         ...FORMAT_BANS,
+        ...DIALOG_BANS,
+      ],
+      "no-restricted-globals": [
+        "error",
+        ...["confirm", "alert", "prompt"].map((name) => ({
+          name,
+          message: "Tarayıcı kutusu yasak; useFeedback() kullanın.",
+        })),
       ],
       "no-restricted-syntax": [
         "error",

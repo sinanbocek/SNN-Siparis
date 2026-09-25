@@ -39,7 +39,7 @@
 
 .staleHint {
   padding: 8px 12px;
-  border: 1px solid #fedf89;
+  border: 1px solid #c7d2fe;
   border-radius: var(--radius);
   background: var(--warn-soft);
   color: var(--warn);

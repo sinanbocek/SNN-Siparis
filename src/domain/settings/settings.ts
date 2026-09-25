@@ -13,7 +13,7 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   repName: "Volkan ULU",
-  repPhone: "0 555 555 55 55",
+  repPhone: "05555555555",
   headerTitle: "Sipariş Formu",
   vatRate: 0.01,
   roundingStepMinor: 100,
