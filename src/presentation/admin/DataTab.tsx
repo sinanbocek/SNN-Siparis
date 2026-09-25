@@ -3,13 +3,12 @@ import { useState } from "react";
 import { parseBackup, type BackupFile } from "../../application/admin/backup.ts";
 import { fmtBytes, fmtStamp } from "../parts/format.ts";
 import { useFeedback } from "../parts/feedback.tsx";
-import { Banner, Icon } from "../parts/parts.tsx";
+import { Icon } from "../parts/parts.tsx";
 import styles from "./admin.module.css";
 
 interface Props {
   lastBackupAt: string | null;
   nowIso: string;
-  backupStale: boolean;
   usageBytes: number | null;
   onExport: (withCosts: boolean, withImages: boolean) => void;
   onImport: (backup: BackupFile) => string | null;
@@ -20,7 +19,6 @@ interface Props {
 export function DataTab({
   lastBackupAt,
   nowIso,
-  backupStale,
   usageBytes,
   onExport,
   onImport,
@@ -62,13 +60,6 @@ export function DataTab({
 
   return (
     <div className={`${styles.tab} ${styles.narrow}`}>
-      {backupStale && (
-        <Banner tone="warn">
-          Son yedek 7 günden eski ya da hiç alınmadı. Tarayıcı verisi silinirse fiyatlar ve
-          siparişler kaybolur.
-        </Banner>
-      )}
-
       <section className={styles.box}>
         <h3>Yedek al</h3>
         <p className={styles.note}>

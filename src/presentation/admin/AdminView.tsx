@@ -39,7 +39,6 @@ export interface AdminProps {
   resizer: ImageResizer;
   lastBackupAt: string | null;
   nowIso: string;
-  backupStale: boolean;
   usageBytes: number | null;
   onPricingChange: (state: PricingState) => void;
   onCatalogChange: (catalog: Catalog) => void;
@@ -75,11 +74,6 @@ export function AdminView(props: AdminProps) {
           <Icon icon={Logout01Icon} size={16} /> Kilitle
         </button>
       </div>
-      {props.backupStale && tab !== "data" && (
-        <button type="button" className={styles.staleHint} onClick={() => setTab("data")}>
-          Son yedek 7 günden eski. Veri sekmesinden yedek alın →
-        </button>
-      )}
       {tab === "pricing" && (
         <PricingTab
           state={props.pricing}
@@ -104,7 +98,6 @@ export function AdminView(props: AdminProps) {
         <DataTab
           lastBackupAt={props.lastBackupAt}
           nowIso={props.nowIso}
-          backupStale={props.backupStale}
           usageBytes={props.usageBytes}
           onExport={props.onExport}
           onImport={props.onImport}

@@ -9,6 +9,3 @@ export const ADMIN_PASSWORD = "0";
 
 /** İşlemsizlikte otomatik kilit süresi. */
 export const ADMIN_IDLE_MS = 5 * 60 * 1000;
-
-/** Son yedek bundan eskiyse uyarı (D5). */
-export const BACKUP_STALE_DAYS = 7;

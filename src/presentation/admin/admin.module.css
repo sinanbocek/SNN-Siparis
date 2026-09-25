@@ -37,17 +37,6 @@
   margin-left: auto;
 }
 
-.staleHint {
-  padding: 8px 12px;
-  border: 1px solid #c7d2fe;
-  border-radius: var(--radius);
-  background: var(--warn-soft);
-  color: var(--warn);
-  font-size: 12.5px;
-  font-weight: 500;
-  text-align: left;
-}
-
 .tab {
   display: grid;
   gap: 12px;

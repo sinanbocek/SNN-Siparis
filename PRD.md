@@ -65,6 +65,7 @@ Bu bölüm aşağıdaki metnin önüne geçer; çelişkide bu tablo geçerlidir.
 | K32 | Giriş kutuları             | GHS-Panel `moneyInputStep` kuralı: yalnız rakam ve tek virgül, binlik kendiliğinden, reddedilen girişte açıklama; telefon yalnız rakam (11 hane)                                                               |
 | K33 | Gezinme                    | Üst şerit koyu; telefonda alt gezinme tam genişlik, koyu, yüzen değil                                                                                                                                          |
 | K34 | Geri bildirim              | Tarayıcı `confirm/alert` yasak (lint); ortak onay penceresi ve bildirim (toast), "Geri al" düğmeli                                                                                                             |
+| K35 | Yedek uyarısı              | "Son yedek 7 günden eski" uyarısı kaldırıldı (D5 önlemi iptal); Veri sekmesinde yalnız son yedek tarihi görünür                                                                                                |
 
 ---
 
