@@ -52,3 +52,22 @@
   gövde 14 px kaldı, yalnız 13 px altı yazılar 13 px'e çıkarıldı. Karar proje sahibinde.
 - Sabotaj denemeleri: numara testi eski davranışta kırmızı.
 - Ayarlar ekranı yeniden tasarım taslağı çizildi; proje sahibi onayı bekleniyor.
+
+## 26.09.2026 — mola, yarın devam
+
+**Kararlar (proje sahibi):**
+
+- 1a — gövde yazısı 14 px kalır (araştırmanın 16 px önerisi uygulanmaz).
+- 2a — Ayarlar ekranı taslağı olduğu gibi uygulanacak: 4 bölüm (Pazarlamacı, Sipariş resmi, Fiyat
+  varsayılanları, Güvenlik ve uygulama); tablette açıklamalı iki sütun, telefonda gruplu liste;
+  metin ayarları otomatik kayıt + "✓ Kaydedildi"; fiyat ayarları taslakta bekler, etki özeti
+  ("N ürünün fiyatı değişecek", örnek önce → sonra), Kaydet / Vazgeç, 10 sn Geri al; yuvarlama
+  4 seçenekli düğme; boş KDV eski değere döner + açıklama; uyarı rengi menekşe.
+
+**Sıradaki iş:** Ayarlar yeniden tasarımı (2a). Kaynak: UI/UX araştırma raporu §6 (oturum
+scratchpad'inde `ui-ux-arastirma.md`; kalıcı değil, gerekirse yeniden üretilir).
+
+**Açık kalanlar:** araştırmanın diğer P1/P2 maddeleri (toplu fiyat işleminde seçim yokken onay,
+klavye odak halkası, kontrast düzeltmeleri, uyarı rengi menekşe); kod incelemesinden görsel
+eşlemesinin `data:image`/`/products` ile sınırlanması ve PNG'de yıl; saha testi (gerçek cihazda
+WhatsApp PNG hiç denenmedi).
