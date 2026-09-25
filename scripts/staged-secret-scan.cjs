@@ -1,5 +1,5 @@
 // Commit öncesi gizli anahtar taraması (TB-001). Yalnız kayda girecek (staged) EKLENEN satırlar taranır.
-// Tarama kuralları ortak standartlardan gelir (SNN-Standartlar kalite/anahtar-tarama.js); burada kopyası
+// Tarama kuralları ortak standartlardan gelir (SNN-Standartlar quality/secret-scan.js); burada kopyası
 // tutulmaz ki iki yer ayrışmasın. GitHub'da her PR'da aynı tarayıcı ayrıca çalışır (.github/workflows/anahtar-tarama.yml).
 // Standart kopyası bu bilgisayarda yoksa commit durdurulmaz, uyarı yazılır (GitHub taraması yine kapıdır).
 "use strict";
@@ -10,7 +10,7 @@ const path = require("node:path");
 
 const scannerPath =
   process.env.SNN_ANAHTAR_TARAMA ??
-  path.join(homedir(), ".claude", "standartlar-canli", "kalite", "anahtar-tarama.js");
+  path.join(homedir(), ".claude", "standartlar-canli", "quality", "secret-scan.js");
 
 if (!existsSync(scannerPath)) {
   console.warn(
