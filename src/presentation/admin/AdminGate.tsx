@@ -84,8 +84,8 @@ export default function AdminGate({ costStore, base }: AdminGateProps) {
             setCosts({});
             setCostError(
               loaded.reason === "corrupt"
-                ? "Maliyet kaydı okunamadı; boş başlatıldı. Eski kayıt ayrı saklandı."
-                : "Maliyetler bu tarayıcıda kaydedilemiyor.",
+                ? "Alış fiyatları kaydı okunamadı; boş başlatıldı. Eski kayıt ayrı saklandı."
+                : "Alış fiyatları bu tarayıcıda kaydedilemiyor.",
             );
           }
           setUnlocked(true);
@@ -97,7 +97,7 @@ export default function AdminGate({ costStore, base }: AdminGateProps) {
   const saveCosts = (next: CostBook) => {
     setCosts(next);
     const result = costStore.save(next);
-    setCostError(result.ok ? null : "Maliyetler kaydedilemedi.");
+    setCostError(result.ok ? null : "Alış fiyatları kaydedilemedi.");
   };
 
   const pricing: PricingState = { catalog: base.catalog, costs };

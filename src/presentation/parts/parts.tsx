@@ -1,6 +1,14 @@
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import { Cancel01Icon, MinusSignIcon, PlusSignIcon } from "@hugeicons/core-free-icons";
-import { useEffect, useId, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type MouseEvent,
+  type PointerEvent,
+  type ReactNode,
+} from "react";
 import { MAX_QTY } from "../../domain/cart/cart.ts";
 import {
   moneyInputStep,
@@ -115,6 +123,24 @@ export function ProductImage({
   );
 }
 
+/**
+ * Arka plana dokununca kapatma — yalnız basma ve bırakma İKİSİ de arka plandaysa.
+ * Kutunun içinde basılıp (metin seçerken) dışarıda bırakılan fare pencereyi kapatmaz.
+ */
+export function useBackdropClose(onClose: () => void) {
+  const pressedOnBackdrop = useRef(false);
+  return {
+    onPointerDown: (e: PointerEvent<HTMLElement>) => {
+      pressedOnBackdrop.current = e.target === e.currentTarget;
+    },
+    onClick: (e: MouseEvent<HTMLElement>) => {
+      const fromBackdrop = pressedOnBackdrop.current && e.target === e.currentTarget;
+      pressedOnBackdrop.current = false;
+      if (fromBackdrop) onClose();
+    },
+  };
+}
+
 function useEscape(onClose: () => void) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -138,10 +164,11 @@ export function Lightbox({
   onClose: () => void;
 }) {
   useEscape(onClose);
+  const backdrop = useBackdropClose(onClose);
   return (
     <div
       className={styles.lightbox}
-      onClick={onClose}
+      {...backdrop}
       role="dialog"
       aria-modal="true"
       aria-label={title}
@@ -174,8 +201,9 @@ export function Modal({
 }) {
   const id = useId();
   useEscape(onClose);
+  const backdrop = useBackdropClose(onClose);
   return (
-    <div className={styles.backdrop} onClick={onClose}>
+    <div className={styles.backdrop} {...backdrop}>
       <div
         className={wide ? `${styles.dialog} ${styles.dialogWide}` : styles.dialog}
         role="dialog"

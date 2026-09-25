@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## 0.3.2 — 25.09.2026
+
+- Pencereler: kutuda basılı tutup dışarı sürükleyince pencere kapanıyordu; artık yalnız arka plana basıp bırakınca kapanır
+- Tanımlar: "Maliyet" → "Benim Alışım", "Satış fiyatı" → "Eczaneye Satışım" (fiyatlama, kâr modu, yedek ekranı)
+
 ## 0.3.1 — 25.09.2026
 
 - "Son yedek 7 günden eski" uyarısı kaldırıldı (yönetim üstü ve Veri sekmesi)

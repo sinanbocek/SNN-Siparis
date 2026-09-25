@@ -35,10 +35,10 @@ import { Icon, Modal, MoneyField, RateField } from "../parts/parts.tsx";
 import styles from "./admin.module.css";
 
 const POLICY_LABELS: Record<ProfitPolicyKind, string> = {
-  markup: "Maliyete % ekle",
+  markup: "Alışıma % ekle",
   margin: "Satıştan % marj",
-  fixed_price: "Sabit satış fiyatı",
-  target_profit: "Maliyete TL ekle",
+  fixed_price: "Sabit eczaneye satış",
+  target_profit: "Alışıma TL ekle",
 };
 
 interface Props {
@@ -143,9 +143,9 @@ export function PricingTab({ state, settings, onChange }: Props) {
                 />
               </th>
               <th>Ürün</th>
-              <th className="num">Maliyet</th>
+              <th className="num">Alışım</th>
               <th>Kâr modu</th>
-              <th className="num">Satış</th>
+              <th className="num">Eczaneye satışım</th>
               <th className="num">Bizim kâr</th>
               <th className="num">PSF</th>
               <th className="num">Eczacı</th>
@@ -178,11 +178,11 @@ export function PricingTab({ state, settings, onChange }: Props) {
                   <td className={styles.cellName}>
                     <b>{variantLabel(state.catalog, v)}</b>
                   </td>
-                  <td className="num" data-label="Maliyet">
+                  <td className="num" data-label="Alışım">
                     {fmtMoney(entry.costMinor)}
                   </td>
                   <td data-label="Kâr modu">{policyText(entry.policy)}</td>
-                  <td className="num" data-label="Satış">
+                  <td className="num" data-label="Eczaneye satışım">
                     <b>{fmtMoney(v.saleMinor)}</b>
                   </td>
                   <td className="num" data-label="Bizim kâr">
@@ -200,7 +200,7 @@ export function PricingTab({ state, settings, onChange }: Props) {
                     {warnings.includes("sale_not_below_psf") && (
                       <span
                         className={styles.bad}
-                        title="Satış fiyatı perakende satış fiyatına eşit ya da yüksek"
+                        title="Eczaneye satışım perakende satış fiyatına eşit ya da yüksek"
                       >
                         <Icon icon={CancelCircleIcon} size={18} />
                       </span>
@@ -248,13 +248,13 @@ export function PricingTab({ state, settings, onChange }: Props) {
 function policyText(policy: ProfitPolicy): string {
   switch (policy.kind) {
     case "markup":
-      return `Maliyet +${fmtRate(policy.rate)}`;
+      return `Alış +${fmtRate(policy.rate)}`;
     case "margin":
       return `${fmtRate(policy.rate)} marj`;
     case "fixed_price":
       return "Sabit";
     case "target_profit":
-      return `Maliyet +${fmtMoney(policy.profitMinor)}`;
+      return `Alış +${fmtMoney(policy.profitMinor)}`;
   }
 }
 
@@ -325,7 +325,7 @@ function PriceEditor({
       return setError("Marj %100 ve üstü olamaz (H5).");
     }
     if (isRatePolicy(kind) && cost === null) {
-      return setError("Bu kâr modu için maliyet gerekli. Maliyet yoksa sabit fiyat seçin.");
+      return setError("Bu kâr modu için alış fiyatınız gerekli. Yoksa sabit eczaneye satış seçin.");
     }
     if (psfMode === "fixed" && psfFixed === null)
       return setError("Sabit perakende satış fiyatını girin.");
@@ -338,7 +338,7 @@ function PriceEditor({
       !(await feedback.confirm({
         title: "Yine kaydedilsin mi?",
         message:
-          "Satış fiyatı perakende satış fiyatına eşit ya da yüksek; eczacı bu üründen kâr etmez.",
+          "Eczaneye satışım perakende satış fiyatına eşit ya da yüksek; eczacı bu üründen kâr etmez.",
         confirmLabel: "Kaydet",
       }))
     ) {
@@ -360,8 +360,8 @@ function PriceEditor({
     <Modal title={variantLabel(catalog, variant)} onClose={onClose}>
       <div className={styles.form}>
         <label>
-          <span>Maliyet (KDV hariç)</span>
-          <MoneyField label="Maliyet" value={cost} onCommit={setCost} placeholder="boş" />
+          <span>Benim Alışım (KDV hariç)</span>
+          <MoneyField label="Benim alışım" value={cost} onCommit={setCost} placeholder="boş" />
         </label>
         <label>
           <span>Kâr modu</span>
@@ -375,7 +375,11 @@ function PriceEditor({
         </label>
         <label>
           <span>
-            {isRatePolicy(kind) ? "Oran" : kind === "fixed_price" ? "Satış fiyatı" : "Kâr tutarı"}
+            {isRatePolicy(kind)
+              ? "Oran"
+              : kind === "fixed_price"
+                ? "Eczaneye Satışım"
+                : "Kâr tutarı"}
           </span>
           {isRatePolicy(kind) ? (
             <RateField label="Oran" value={rate} onCommit={setRate} />
@@ -385,7 +389,7 @@ function PriceEditor({
         </label>
         <div className={styles.preview}>
           <span>
-            Satış <b className="num">{fmtMoney(effectiveSale)}</b>
+            Eczaneye Satışım <b className="num">{fmtMoney(effectiveSale)}</b>
           </span>
           <span>
             Bizim kâr <b className="num">{fmtMoney(ourProfit(effectiveSale, cost))}</b>
@@ -435,7 +439,7 @@ function PriceEditor({
         </div>
         {warnings.includes("sale_not_below_psf") && (
           <p className={styles.errorText}>
-            Satış fiyatı perakende satış fiyatına eşit ya da yüksek.
+            Eczaneye satışım perakende satış fiyatına eşit ya da yüksek.
           </p>
         )}
         {warnings.includes("low_pharmacist_margin") && (

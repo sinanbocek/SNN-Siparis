@@ -15,7 +15,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Icon } from "./parts.tsx";
+import { Icon, useBackdropClose } from "./parts.tsx";
 import styles from "./feedback.module.css";
 
 /**
@@ -157,6 +157,7 @@ function ConfirmDialog({
 }) {
   const titleId = useId();
   const confirmRef = useRef<HTMLButtonElement>(null);
+  const backdrop = useBackdropClose(() => onClose(false));
   useEffect(() => {
     confirmRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
@@ -167,7 +168,7 @@ function ConfirmDialog({
   }, [onClose]);
 
   return (
-    <div className={styles.backdrop} onClick={() => onClose(false)}>
+    <div className={styles.backdrop} {...backdrop}>
       <div
         className={styles.dialog}
         role="alertdialog"
