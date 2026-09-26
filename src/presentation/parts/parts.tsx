@@ -193,11 +193,14 @@ export function Modal({
   title,
   onClose,
   children,
+  footer,
   wide = false,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  /** Kaydırılmayan alt çubuk (Vazgeç / Kaydet): içerik uzun olsa da hep görünür. */
+  footer?: ReactNode;
   wide?: boolean;
 }) {
   const id = useId();
@@ -219,6 +222,7 @@ export function Modal({
           </button>
         </header>
         <div className={styles.dialogBody}>{children}</div>
+        {footer !== undefined && <footer className={styles.dialogFoot}>{footer}</footer>}
       </div>
     </div>
   );

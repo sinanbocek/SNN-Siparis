@@ -1,5 +1,36 @@
 # Değişiklik Günlüğü
 
+## 0.5.0 — 26.09.2026
+
+Ayarlar ekranı yeniden tasarlandı (karar 2a).
+
+- Dört bölüm: Pazarlamacı, Sipariş resmi, Fiyat varsayılanları, Güvenlik ve uygulama;
+  tablette açıklamalı iki sütun, telefonda gruplu liste
+- Ad, telefon, başlık ve önek kendiliğinden kaydedilir; "✓ Kaydedildi" izi, hata olursa kırmızı satır
+- Sipariş resmi önizlemesi: başlık ve örnek numara; önek büyük harfe çevrilir, silinen karakter söylenir
+- Fiyat ayarları (KDV, eczacı kârı, yuvarlama) taslakta bekler: "N ürünün fiyatı değişecek",
+  örnek önce → sonra; Kaydet ya hep ya hiç, ardından 10 sn "Geri al"
+- Yuvarlama dört seçenekli düğme (Kuruş · 1 TL · 5 TL · 10 TL)
+- Boş bırakılan KDV ya da eczacı kârı eski değere döner ve açıklama çıkar
+- Şimdi kilitle, sürüm numarası ve "Güncellemeleri denetle"; yönetim şeridindeki "Kilitle"
+  düğmesi kaldırıldı (aynı iş Ayarlar'da)
+- Uyarı rengi menekşe; geliştirici notu kaldırıldı
+- Fiyatlama → **Toplu fiyat değişikliği** kartı: Artır/Azalt, %/TL, tek tutar; Önizle
+  ("N ürünün fiyatı %10 düşecek", örnek önce → sonra), Uygula; seçim yoksa onay; 10 sn Geri al.
+  İndirim artık yapılabiliyor; sıfırın altına düşecek ürün atlanır ve söylenir
+- Alış tahmini ayrı satırda, yalnız alışı boş ürün varsa görünür; Geri al'lı
+- Yönetim şeridindeki "Yönetim" etiketi kaldırıldı
+- Ürün fiyat penceresi yeniden: üstte hep görünen fiyat zinciri (Alış → Eczaneye Satışım → PSF,
+  benim kârım ve eczacı kârı tutar + yüzde); "Elle yazarım / Alışımdan hesapla" ve "% ekle / % marj /
+  TL ekle" düğmeleri; Perakende Satış Fiyatı "Eczacı oranından / Elle yazarım"; MF tek cümle;
+  KDV kapalı satırda; Vazgeç / Kaydet altta sabit
+- Kaydet'e basınca düğme kilitlenir ("Kaydediliyor…"), ardından "Kayıt güncellendi" bildirimi
+- "Bizim kâr" → **Benim kârım** (fiyat tablosu ve pencere)
+- Yönetim sekme sırası: Ürünler · Fiyatlama · Raporlar · Ayarlar · Veri; yönetim Ürünler ile açılır
+- **Ürünler** yeniden (taslak A): kompakt liste, her çeşit tek satır; Yayında aç-kapa satırda;
+  satıra dokununca düzenleme penceresi (ad, birim; görsel, sıra, sil); grup işlemleri ⋮ ile;
+  fiyatsız çeşit satırda "Fiyat yok" diye işaretli; Kaydet kilidi ve "Kayıt güncellendi"
+
 ## 0.4.1 — 25.09.2026
 
 Satış ekranı dokunuş kalitesi ve iki doğruluk düzeltmesi (kod incelemesi + UI/UX araştırması).

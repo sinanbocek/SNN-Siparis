@@ -1,0 +1,168 @@
+/*
+ * Ürün fiyat penceresi (taslak onaylı 26.09.2026): üstte hep görünen fiyat zinciri,
+ * üç bölüm, altta sabit Vazgeç / Kaydet (Modal footer).
+ */
+.chain {
+  position: sticky;
+  top: -8px;
+  z-index: 2;
+  display: grid;
+  gap: 8px;
+  margin: 0 -4px 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+  /* üstteki 8 px boşluğu da örter: kaydırılan yazı şeridin üstünden görünmez */
+  box-shadow:
+    0 -9px 0 var(--surface),
+    0 6px 12px -10px rgb(16 24 40 / 30%);
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 4px;
+  color: var(--faint);
+  text-align: center;
+}
+
+.steps > span {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.steps small {
+  color: var(--mute);
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+/* ortak .num sağa yaslar; burada başlığın tam altında ortalı dursun */
+.steps b {
+  text-align: center;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.gains {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: 4px 16px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  color: var(--mute);
+  font-size: 13px;
+}
+
+.gains b {
+  margin-left: 4px;
+  color: var(--good);
+  font-weight: 600;
+}
+
+.warn,
+.bad {
+  margin: 0;
+  font-size: 13px;
+  text-align: center;
+}
+
+.warn {
+  color: var(--warn);
+}
+
+.bad {
+  color: var(--bad);
+}
+
+.section {
+  display: grid;
+  gap: 10px;
+  padding: 16px 0 4px;
+}
+
+.section + .section {
+  border-top: 1px solid var(--line);
+}
+
+.section h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field > span {
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.field small {
+  color: var(--mute);
+  font-weight: 400;
+}
+
+/* MF tek cümle: "Her [10] kutuya [1] kutu bedava" */
+.mf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-2);
+}
+
+.mf input {
+  width: 64px !important;
+  text-align: center;
+}
+
+.mf small {
+  flex-basis: 100%;
+  color: var(--mute);
+  font-size: 13px;
+}
+
+.more summary {
+  min-height: var(--control-h);
+  display: flex;
+  align-items: center;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.more[open] summary {
+  min-height: 32px;
+}
+
+.error {
+  margin: 0;
+  color: var(--bad);
+  font-size: 13px;
+}
+
+.footButtons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (min-width: 701px) {
+  .footButtons {
+    display: flex;
+    justify-content: flex-end;
+  }
+}

@@ -43,7 +43,12 @@ function setup(mem = new MemoryStorage()) {
       share={share}
       png={{ render: async () => new Blob(["png"], { type: "image/png" }) }}
       resizer={{ resize: async () => "data:image/webp;base64,AA" }}
-      updates={{ subscribe: () => () => undefined, apply: () => undefined }}
+      updates={{
+        version: "0.0.0",
+        subscribe: () => () => undefined,
+        check: () => Promise.resolve("current"),
+        apply: () => undefined,
+      }}
       now={() => "2026-09-25T10:00:00.000Z"}
       admin={{ costStore: createCostStore(mem) }}
     />,
@@ -195,8 +200,143 @@ describe("yönetim", () => {
     fireEvent.change(pass, { target: { value: "1" } });
     expect(screen.getByText("Şifre yanlış.")).toBeTruthy();
     fireEvent.change(screen.getByLabelText("Şifre"), { target: { value: "0" } });
-    expect(await screen.findByText("Yönetim")).toBeTruthy();
-    expect(screen.getByRole("navigation", { name: "Yönetim sekmeleri" })).toBeTruthy();
+    expect(await screen.findByRole("navigation", { name: "Yönetim sekmeleri" })).toBeTruthy();
+  });
+
+  async function openSettings() {
+    const env = setup();
+    fireEvent.click(screen.getByRole("button", { name: "Yönetim" }));
+    fireEvent.change(await screen.findByLabelText("Şifre"), { target: { value: "0" } });
+    fireEvent.click(await screen.findByRole("button", { name: "Ayarlar" }));
+    return env;
+  }
+
+  it("ayarlar: metin ayarı kendiliğinden kaydedilir ve 'Kaydedildi' görünür", async () => {
+    const { mem } = await openSettings();
+    fireEvent.change(screen.getByLabelText("Ad soyad"), { target: { value: "Ayşe Deniz" } });
+    expect(await screen.findByText("Kaydedildi")).toBeTruthy();
+    expect(mem.getItem("snn-siparis.settings")).toContain("Ayşe Deniz");
+    fireEvent.change(screen.getByLabelText("Numara öneki"), { target: { value: "ab-1" } });
+    expect(screen.getByText("Önekte yalnız harf ve rakam kullanılabilir.")).toBeTruthy();
+    expect(screen.getByText(/^AB1-\d{8}-01$/)).toBeTruthy();
+  });
+
+  it("ayarlar: fiyat ayarı taslakta bekler, etki özeti, Kaydet, sonra Geri al", async () => {
+    const { mem } = await openSettings();
+    const markup = screen.getByLabelText("Eczacı kârı");
+    fireEvent.change(markup, { target: { value: "25" } });
+    fireEvent.blur(markup);
+    expect(await screen.findByText(/ürünün fiyatı değişecek\.$/)).toBeTruthy();
+    expect(mem.getItem("snn-siparis.settings") ?? "").not.toContain("0.25");
+    fireEvent.click(screen.getByRole("button", { name: "Kaydet" }));
+    await waitFor(() => expect(mem.getItem("snn-siparis.settings")).toContain("0.25"));
+    expect(screen.queryByRole("button", { name: "Kaydet" })).toBeNull();
+    fireEvent.click(await screen.findByRole("button", { name: "Geri al" }));
+    await waitFor(() =>
+      expect(mem.getItem("snn-siparis.settings")).toContain(`"defaultPharmacistMarkup":0.2,`),
+    );
+  });
+
+  it("toplu fiyat: önizleme fiyatı değiştirmez; seçim yokken onay; Uygula, sonra Geri al", async () => {
+    const { mem } = setup();
+    fireEvent.click(screen.getByRole("button", { name: "Yönetim" }));
+    fireEvent.change(await screen.findByLabelText("Şifre"), { target: { value: "0" } });
+    fireEvent.click(await screen.findByRole("button", { name: "Fiyatlama" }));
+    const before = mem.getItem("snn-siparis.catalog");
+    fireEvent.click(screen.getByRole("radio", { name: "Azalt" }));
+    const field = screen.getByLabelText("Toplu değişiklik yüzdesi");
+    fireEvent.change(field, { target: { value: "10" } });
+    fireEvent.blur(field);
+    fireEvent.click(screen.getByRole("button", { name: "Önizle" }));
+    expect(await screen.findByText(/ürünün fiyatı %10 düşecek\.$/)).toBeTruthy();
+    expect(mem.getItem("snn-siparis.catalog")).toBe(before);
+    fireEvent.click(screen.getByRole("button", { name: "Uygula" }));
+    const dialog = await screen.findByRole("alertdialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Uygula" }));
+    await waitFor(() => expect(mem.getItem("snn-siparis.catalog")).not.toBe(before));
+    fireEvent.click(await screen.findByRole("button", { name: "Geri al" }));
+    await waitFor(() => expect(mem.getItem("snn-siparis.catalog")).toBe(before));
+  });
+
+  it("fiyat penceresi: alıştan % marj ile hesap, özet anında, Kaydet kataloğa yazar", async () => {
+    const { mem } = setup();
+    fireEvent.click(screen.getByRole("button", { name: "Yönetim" }));
+    fireEvent.change(await screen.findByLabelText("Şifre"), { target: { value: "0" } });
+    fireEvent.click(await screen.findByRole("button", { name: "Fiyatlama" }));
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Gardegen 60 Kapsül seç" }).closest("tr")!,
+    );
+    const dialog = await screen.findByRole("dialog", { name: "Gardegen 60 Kapsül" });
+    const inDialog = within(dialog);
+    fireEvent.click(inDialog.getByRole("radio", { name: "Alışımdan hesapla" }));
+    // eksik değerle Kaydet: hata çıkar, düğme kilitli kalmaz
+    fireEvent.click(inDialog.getByRole("button", { name: "Kaydet" }));
+    expect(await inDialog.findByRole("alert")).toBeTruthy();
+    expect((inDialog.getByRole("button", { name: "Kaydet" }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+    const cost = inDialog.getByLabelText("Benim Alışım");
+    fireEvent.change(cost, { target: { value: "1000" } });
+    fireEvent.blur(cost);
+    fireEvent.click(inDialog.getByRole("radio", { name: "% marj" }));
+    const rate = inDialog.getByLabelText("Marj (satış içindeki payım)");
+    fireEvent.change(rate, { target: { value: "60" } });
+    fireEvent.blur(rate);
+    // 1.000 ÷ (1 − 0,60) = 2.500; benim kârım 1.500 = satışın %60'ı
+    const summary = inDialog.getByLabelText("Fiyat özeti");
+    expect(within(summary).getByText("₺2.500,00")).toBeTruthy();
+    expect(within(summary).getByText("₺1.500,00 · %60")).toBeTruthy();
+    fireEvent.click(inDialog.getByRole("button", { name: "Kaydet" }));
+    expect(await screen.findByText("Kayıt güncellendi.")).toBeTruthy();
+    await waitFor(() =>
+      expect(mem.getItem("snn-siparis.catalog")).toMatch(
+        /"id":"gardegen-60"[^}]*"saleMinor":250000/,
+      ),
+    );
+  });
+
+  it("ürünler: satır pencerede düzenlenir; aç-kapa hemen; yeni çeşit", async () => {
+    const { mem } = setup();
+    fireEvent.click(screen.getByRole("button", { name: "Yönetim" }));
+    fireEvent.change(await screen.findByLabelText("Şifre"), { target: { value: "0" } });
+    // yönetim Ürünler ile açılır
+    fireEvent.click(await screen.findByRole("button", { name: "Gardegen 60 Kapsül düzenle" }));
+    const dialog = await screen.findByRole("dialog", { name: "Gardegen 60 Kapsül" });
+    fireEvent.change(within(dialog).getByLabelText("Çeşit adı"), {
+      target: { value: "60 Kapsül Yeni" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Kaydet" }));
+    expect(await screen.findByText("Kayıt güncellendi.")).toBeTruthy();
+    expect(mem.getItem("snn-siparis.catalog")).toContain("60 Kapsül Yeni");
+
+    const toggle = screen.getByRole("switch", { name: "Gardegen 60 Kapsül Yeni yayında" });
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-checked")).toBe("false");
+    const saved = JSON.parse(mem.getItem("snn-siparis.catalog") ?? "{}") as {
+      data: { variants: { name: string; active: boolean }[] };
+    };
+    expect(saved.data.variants.find((v) => v.name === "60 Kapsül Yeni")?.active).toBe(false);
+    expect(screen.queryByRole("dialog")).toBeNull();
+
+    const group = screen.getByRole("region", { name: "Gardegen" });
+    fireEvent.click(within(group).getByRole("button", { name: "Çeşit ekle" }));
+    const add = await screen.findByRole("dialog", { name: "Gardegen · yeni çeşit" });
+    fireEvent.click(within(add).getByRole("button", { name: "Kaydet" }));
+    expect(within(add).getByRole("alert").textContent).toBe("Çeşit adını yazın.");
+    fireEvent.change(within(add).getByLabelText("Çeşit adı"), { target: { value: "30 Kapsül" } });
+    fireEvent.click(within(add).getByRole("button", { name: "Kaydet" }));
+    expect(await within(group).findByText(/Fiyat yok/)).toBeTruthy();
+    expect(mem.getItem("snn-siparis.catalog")).toContain("30 Kapsül");
+  });
+
+  it("ayarlar: boş KDV eski değere döner ve açıklama çıkar", async () => {
+    await openSettings();
+    const vat = screen.getByLabelText("KDV oranı");
+    fireEvent.change(vat, { target: { value: "" } });
+    fireEvent.blur(vat);
+    expect(await screen.findByText("KDV boş olamaz; %1 geri yüklendi.")).toBeTruthy();
+    expect((screen.getByLabelText("KDV oranı") as HTMLInputElement).value).toBe("1");
+    expect(screen.queryByRole("button", { name: "Kaydet" })).toBeNull();
   });
 });
 

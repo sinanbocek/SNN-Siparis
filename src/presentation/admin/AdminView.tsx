@@ -2,7 +2,6 @@ import {
   Calculator01Icon,
   ChartHistogramIcon,
   LockIcon,
-  Logout01Icon,
   PackageIcon,
   Settings02Icon,
   Task01Icon,
@@ -17,6 +16,7 @@ import type { ImageMap } from "../../application/ports/stores.ts";
 import type { Catalog } from "../../domain/catalog/catalog.ts";
 import type { Settings } from "../../domain/settings/settings.ts";
 import { Icon } from "../parts/parts.tsx";
+import type { AppInfo } from "./AdminGate.tsx";
 import { DataTab } from "./DataTab.tsx";
 import { PricingTab } from "./PricingTab.tsx";
 import { ReportsTab } from "./ReportsTab.tsx";
@@ -28,9 +28,9 @@ import styles from "./admin.module.css";
 type Tab = "reports" | "pricing" | "products" | "settings" | "data";
 
 const TABS: readonly { id: Tab; label: string; icon: typeof PackageIcon }[] = [
-  { id: "reports", label: "Raporlar", icon: ChartHistogramIcon },
-  { id: "pricing", label: "Fiyatlama", icon: Calculator01Icon },
   { id: "products", label: "Ürünler", icon: PackageIcon },
+  { id: "pricing", label: "Fiyatlama", icon: Calculator01Icon },
+  { id: "reports", label: "Raporlar", icon: ChartHistogramIcon },
   { id: "settings", label: "Ayarlar", icon: Settings02Icon },
   { id: "data", label: "Veri", icon: Task01Icon },
 ];
@@ -48,7 +48,9 @@ export interface AdminProps {
   usageBytes: number | null;
   onPricingChange: (state: PricingState) => void;
   onCatalogChange: (catalog: Catalog) => void;
-  onSettingsChange: (settings: Settings) => void;
+  onSettingsChange: (settings: Settings) => string | null;
+  onPriceSettingsSave: (settings: Settings, catalog: Catalog) => string | null;
+  app: AppInfo;
   onImagesChange: (images: ImageMap) => Promise<string | null>;
   onExport: (withCosts: boolean, withImages: boolean) => void;
   onImport: (backup: BackupFile) => string | null;
@@ -58,11 +60,10 @@ export interface AdminProps {
 
 /** Yönetim: ayrı dünya — turuncu bant, "Yönetim modu" etiketi (PRD §5.1). */
 export function AdminView(props: AdminProps) {
-  const [tab, setTab] = useState<Tab>("reports");
+  const [tab, setTab] = useState<Tab>("products");
   return (
     <section className={styles.admin} aria-label="Yönetim">
       <div className={styles.adminBar}>
-        <span className={styles.adminTag}>Yönetim</span>
         <nav className="tabs" aria-label="Yönetim sekmeleri">
           {TABS.map((t) => (
             <button
@@ -76,9 +77,6 @@ export function AdminView(props: AdminProps) {
             </button>
           ))}
         </nav>
-        <button type="button" className="btn" onClick={props.onLock}>
-          <Icon icon={Logout01Icon} size={16} /> Kilitle
-        </button>
       </div>
       {tab === "reports" && (
         <ReportsTab
@@ -107,7 +105,15 @@ export function AdminView(props: AdminProps) {
         />
       )}
       {tab === "settings" && (
-        <SettingsTab settings={props.settings} onChange={props.onSettingsChange} />
+        <SettingsTab
+          settings={props.settings}
+          pricing={props.pricing}
+          app={props.app}
+          today={props.today}
+          onChange={props.onSettingsChange}
+          onPriceSave={props.onPriceSettingsSave}
+          onLock={props.onLock}
+        />
       )}
       {tab === "data" && (
         <DataTab

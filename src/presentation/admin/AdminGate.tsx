@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { backupFileName, buildBackup, type BackupFile } from "../../application/admin/backup.ts";
 import { ADMIN_IDLE_MS, type CostStore } from "../../application/admin/ports.ts";
-import { rederiveSales, type PricingState } from "../../application/admin/pricing.ts";
-import type { ImageResizer } from "../../application/ports/devices.ts";
+import type { PricingState } from "../../application/admin/pricing.ts";
+import type { ImageResizer, UpdateCheck } from "../../application/ports/devices.ts";
 import type { ImageMap, Meta } from "../../application/ports/stores.ts";
 import type { Catalog } from "../../domain/catalog/catalog.ts";
 import type { CostBook } from "../../domain/costs/costs.ts";
@@ -22,7 +22,12 @@ export interface AdminBase {
   today: string;
   now: () => string;
   onCatalogChange: (catalog: Catalog) => void;
-  onSettingsChange: (settings: Settings) => void;
+  /** Metin ayarları (otomatik kayıt); hata mesajı ya da null döner. */
+  onSettingsChange: (settings: Settings) => string | null;
+  /** Fiyat ayarları + yeniden türetilen katalog, ya hep ya hiç; hata mesajı ya da null. */
+  onPriceSettingsSave: (settings: Settings, catalog: Catalog) => string | null;
+  /** Sürüm ve güncelleme (Ayarlar › Güvenlik ve uygulama). */
+  app: AppInfo;
   onImagesChange: (images: ImageMap) => Promise<string | null>;
   /** Yedeği ya hep ya hiç yazar; hata olursa mevcut veri korunur ve mesaj döner. */
   applyBackup: (backup: BackupFile) => string | null;
@@ -32,6 +37,13 @@ export interface AdminBase {
   onExit: () => void;
   /** Yedeğe eklenecek siparişler. */
   orders: readonly Order[];
+}
+
+export interface AppInfo {
+  version: string;
+  updateReady: boolean;
+  checkUpdates: () => Promise<UpdateCheck>;
+  applyUpdate: () => void;
 }
 
 export interface AdminGateProps {
@@ -166,12 +178,9 @@ export default function AdminGate({ costStore, base }: AdminGateProps) {
         usageBytes={base.usageBytes}
         onPricingChange={applyPricing}
         onCatalogChange={base.onCatalogChange}
-        onSettingsChange={(next) => {
-          base.onSettingsChange(next);
-          if (next.roundingStepMinor !== base.settings.roundingStepMinor) {
-            applyPricing(rederiveSales(pricing, next.roundingStepMinor));
-          }
-        }}
+        onSettingsChange={base.onSettingsChange}
+        onPriceSettingsSave={base.onPriceSettingsSave}
+        app={base.app}
         onImagesChange={base.onImagesChange}
         onExport={onExport}
         onImport={onImport}

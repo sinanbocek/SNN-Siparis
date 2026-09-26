@@ -5,7 +5,12 @@ import {
   Task01Icon,
 } from "@hugeicons/core-free-icons";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import type { PngRenderer, ImageResizer, ShareService } from "../../application/ports/devices.ts";
+import type {
+  PngRenderer,
+  ImageResizer,
+  ShareService,
+  UpdateCheck,
+} from "../../application/ports/devices.ts";
 import type {
   DocumentStore,
   ImageMap,
@@ -44,7 +49,10 @@ import styles from "./app.module.css";
 const AdminGate = lazy(() => import("../admin/AdminGate.tsx"));
 
 export interface UpdateSignal {
+  /** Uygulama sürümü (package.json). */
+  readonly version: string;
   subscribe(listener: (ready: boolean) => void): () => void;
+  check(): Promise<UpdateCheck>;
   apply(): void;
 }
 
@@ -519,7 +527,37 @@ function AppShell({ stores, seed, share, png, resizer, updates, now, admin }: Ap
                 },
                 onSettingsChange: (next) => {
                   setSettings(next);
-                  persist(stores.settings, next);
+                  const error = persist(stores.settings, next);
+                  if (error === null) return null;
+                  return error === "quota"
+                    ? "Cihazda yer kalmadı; ayar kaydedilemedi."
+                    : "Ayar kaydedilemedi.";
+                },
+                onPriceSettingsSave: (nextSettings, nextCatalog) => {
+                  const error = writeAllOrNothing([
+                    {
+                      write: () => stores.settings.save(nextSettings),
+                      rollback: () => stores.settings.save(settings),
+                    },
+                    {
+                      write: () => stores.catalog.save(nextCatalog),
+                      rollback: () => stores.catalog.save(catalog),
+                    },
+                  ]);
+                  if (error !== null) {
+                    return error === "quota"
+                      ? "Cihazda yer kalmadı; fiyat ayarları kaydedilmedi. Eski değerler korundu."
+                      : "Fiyat ayarları kaydedilemedi. Eski değerler korundu.";
+                  }
+                  setSettings(nextSettings);
+                  setCatalog(nextCatalog);
+                  return null;
+                },
+                app: {
+                  version: updates.version,
+                  updateReady,
+                  checkUpdates: () => updates.check(),
+                  applyUpdate: () => updates.apply(),
                 },
                 onImagesChange: async (next) => {
                   const error = persist(stores.images, next);

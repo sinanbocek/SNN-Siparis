@@ -20,8 +20,8 @@
   --accent-ring: rgb(59 91 219 / 18%);
   --good: #067647;
   --good-soft: #ecfdf3;
-  --warn: #3b5bdb; /* uyarı = vurgu rengi; amber yok (proje sahibi 25.09.2026) */
-  --warn-soft: #eef2ff;
+  --warn: #6d28d9; /* uyarı = menekşe; amber yok (proje sahibi 25.09.2026, karar 2a) */
+  --warn-soft: #f5f3ff;
   --bad: #d92d20;
   --bad-soft: #fef3f2;
 
