@@ -20,6 +20,10 @@ Ayarlar ekranı yeniden tasarlandı (karar 2a).
   İndirim artık yapılabiliyor; sıfırın altına düşecek ürün atlanır ve söylenir
 - Alış tahmini ayrı satırda, yalnız alışı boş ürün varsa görünür; Geri al'lı
 - Yönetim şeridindeki "Yönetim" etiketi kaldırıldı
+- Ürün fiyat penceresi yeniden: üstte hep görünen fiyat zinciri (Alış → Eczaneye Satışım → PSF,
+  bizim kâr ve eczacı kârı tutar + yüzde); "Elle yazarım / Alışımdan hesapla" ve "% ekle / % marj /
+  TL ekle" düğmeleri; Perakende Satış Fiyatı "Eczacı oranından / Elle yazarım"; MF tek cümle;
+  KDV kapalı satırda; Vazgeç / Kaydet altta sabit
 
 ## 0.4.1 — 25.09.2026
 

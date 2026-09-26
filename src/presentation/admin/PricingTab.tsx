@@ -1,4 +1,9 @@
-import { Alert02Icon, Calculator01Icon, CancelCircleIcon } from "@hugeicons/core-free-icons";
+import {
+  Alert02Icon,
+  ArrowRight01Icon,
+  Calculator01Icon,
+  CancelCircleIcon,
+} from "@hugeicons/core-free-icons";
 import { useMemo, useRef, useState } from "react";
 import {
   applyCostEntry,
@@ -12,7 +17,6 @@ import {
 } from "../../application/admin/pricing.ts";
 import { math } from "../../domain/abacus/index.ts";
 import {
-  effectiveMarkup,
   effectiveVat,
   familyOf,
   variantLabel,
@@ -23,12 +27,10 @@ import {
   type Variant,
 } from "../../domain/catalog/catalog.ts";
 import {
-  isRatePolicy,
   ourProfit,
   saleFromPolicy,
   type CostEntry,
   type ProfitPolicy,
-  type ProfitPolicyKind,
 } from "../../domain/costs/costs.ts";
 import { parseQtyInput, qtyInput } from "../../domain/input/parse.ts";
 import { markupFromPsf, priceWarnings, psfFromSale } from "../../domain/pricing/pricing.ts";
@@ -37,14 +39,8 @@ import { fmtMoney, fmtRate } from "../parts/format.ts";
 import { useFeedback } from "../parts/feedback.tsx";
 import { Icon, Modal, MoneyField, RateField } from "../parts/parts.tsx";
 import styles from "./admin.module.css";
+import ed from "./priceEditor.module.css";
 import shared from "./settings.module.css";
-
-const POLICY_LABELS: Record<ProfitPolicyKind, string> = {
-  markup: "Alışıma % ekle",
-  margin: "Satıştan % marj",
-  fixed_price: "Sabit eczaneye satış",
-  target_profit: "Alışıma TL ekle",
-};
 
 interface Props {
   state: PricingState;
@@ -215,6 +211,62 @@ function policyText(policy: ProfitPolicy): string {
 
 type VariantPatch = Pick<Variant, "psf" | "pharmacistMarkup" | "vatRate" | "mfRule">;
 
+type SaleSource = "manual" | "cost";
+type CostMethod = "markup" | "margin" | "target_profit";
+type PsfMode = PsfSetting["mode"];
+
+const COST_METHODS: readonly (readonly [CostMethod, string])[] = [
+  ["markup", "% ekle"],
+  ["margin", "% marj"],
+  ["target_profit", "TL ekle"],
+];
+
+const METHOD_FIELD: Record<CostMethod, string> = {
+  markup: "Alışıma eklenecek oran",
+  margin: "Marj (satış içindeki payım)",
+  target_profit: "Alışıma eklenecek tutar",
+};
+
+function Choice<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: readonly (readonly [T, string])[];
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div className={shared.segmented} role="radiogroup" aria-label={label}>
+      {options.map(([id, text]) => (
+        <button
+          key={id}
+          type="button"
+          role="radio"
+          aria-checked={value === id}
+          onClick={() => onChange(id)}
+        >
+          {text}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Tutar ve oran: "₺1.280,00 · %40". Oran hesaplanamazsa yalnız tutar. */
+function amountWithRate(amount: number | null, base: number | null): string {
+  if (amount === null) return fmtMoney(null);
+  const rate = base === null || base <= 0 ? null : math.div(amount, base);
+  return rate === null ? fmtMoney(amount) : `${fmtMoney(amount)} · ${fmtRate(rate, 0)}`;
+}
+
+/**
+ * Ürün fiyat penceresi (proje sahibi 26.09.2026, taslak onaylı): üstte hep görünen fiyat
+ * zinciri; Eczaneye Satışım ve Perakende Satış Fiyatı için iki basit soru; MF tek cümle;
+ * KDV kapalı; Vazgeç / Kaydet altta sabit.
+ */
 function PriceEditor({
   catalog,
   variant,
@@ -230,19 +282,24 @@ function PriceEditor({
   onClose: () => void;
   onSave: (entry: CostEntry, patch: VariantPatch) => void;
 }) {
+  const initial = entry.policy;
   const [cost, setCost] = useState(entry.costMinor);
-  const [kind, setKind] = useState<ProfitPolicyKind>(entry.policy.kind);
+  const [source, setSource] = useState<SaleSource>(
+    initial.kind === "fixed_price" ? "manual" : "cost",
+  );
+  const [method, setMethod] = useState<CostMethod>(
+    initial.kind === "fixed_price" ? "margin" : initial.kind,
+  );
   const [rate, setRate] = useState<number | null>(
-    entry.policy.kind === "markup" || entry.policy.kind === "margin" ? entry.policy.rate : 0.5,
+    initial.kind === "markup" || initial.kind === "margin" ? initial.rate : null,
   );
-  const [amount, setAmount] = useState<number | null>(
-    entry.policy.kind === "fixed_price"
-      ? entry.policy.priceMinor
-      : entry.policy.kind === "target_profit"
-        ? entry.policy.profitMinor
-        : variant.saleMinor,
+  const [profit, setProfit] = useState<number | null>(
+    initial.kind === "target_profit" ? initial.profitMinor : null,
   );
-  const [psfMode, setPsfMode] = useState<PsfSetting["mode"]>(variant.psf.mode);
+  const [manualSale, setManualSale] = useState<number | null>(
+    initial.kind === "fixed_price" ? initial.priceMinor : variant.saleMinor,
+  );
+  const [psfMode, setPsfMode] = useState<PsfMode>(variant.psf.mode);
   const [psfFixed, setPsfFixed] = useState<number | null>(
     variant.psf.mode === "fixed" ? variant.psf.priceMinor : null,
   );
@@ -254,46 +311,54 @@ function PriceEditor({
   const feedback = useFeedback();
 
   const policy: ProfitPolicy | null = (() => {
-    if (isRatePolicy(kind)) {
-      if (rate === null) return null;
-      return kind === "markup" ? { kind: "markup", rate } : { kind: "margin", rate };
+    if (source === "manual") {
+      return manualSale === null ? null : { kind: "fixed_price", priceMinor: manualSale };
     }
-    if (amount === null) return null;
-    return kind === "fixed_price"
-      ? { kind: "fixed_price", priceMinor: amount }
-      : { kind: "target_profit", profitMinor: amount };
+    if (method === "target_profit") {
+      return profit === null ? null : { kind: "target_profit", profitMinor: profit };
+    }
+    if (rate === null) return null;
+    return method === "markup" ? { kind: "markup", rate } : { kind: "margin", rate };
   })();
-  const sale = policy === null ? null : saleFromPolicy(cost, policy, settings.roundingStepMinor);
-  const effectiveSale = sale === null ? variant.saleMinor : sale;
-  const markupRate = markup === null ? effectiveMarkup(variant, settings) : markup;
+  const step = settings.roundingStepMinor;
+  const sale = policy === null ? null : saleFromPolicy(cost, policy, step);
+  const defaultMarkup = settings.defaultPharmacistMarkup;
   const psf =
     psfMode === "fixed"
       ? psfFixed
-      : effectiveSale === null
+      : sale === null
         ? null
-        : psfFromSale(effectiveSale, markupRate, settings.roundingStepMinor);
-  const warnings = effectiveSale !== null && psf !== null ? priceWarnings(effectiveSale, psf) : [];
+        : psfFromSale(sale, markup ?? defaultMarkup, step);
+  const warnings = sale !== null && psf !== null ? priceWarnings(sale, psf) : [];
+  const ourAmount = ourProfit(sale, cost);
+  const pharmacistAmount = sale === null || psf === null ? null : math.sub(psf, sale);
+  const defaultVat = effectiveVat({ ...variant, vatRate: null }, settings);
 
   const save = async () => {
-    if (policy === null) return setError("Kâr modu değerini girin.");
-    if (kind === "margin" && rate !== null && rate >= 1) {
-      return setError("Marj %100 ve üstü olamaz (H5).");
+    if (source === "cost" && cost === null) {
+      return setError("Alışımdan hesaplamak için Benim Alışım fiyatını yazın.");
     }
-    if (isRatePolicy(kind) && cost === null) {
-      return setError("Bu kâr modu için alış fiyatınız gerekli. Yoksa sabit eczaneye satış seçin.");
+    if (policy === null) {
+      return setError(
+        source === "manual" ? "Eczaneye Satışım fiyatını yazın." : "Hesap için değeri yazın.",
+      );
     }
-    if (psfMode === "fixed" && psfFixed === null)
-      return setError("Sabit perakende satış fiyatını girin.");
+    if (policy.kind === "margin" && policy.rate >= 1) {
+      return setError("Marj %100 ve üstü olamaz.");
+    }
+    if (psfMode === "fixed" && psfFixed === null) {
+      return setError("Perakende Satış Fiyatını yazın.");
+    }
     const every = mfEvery.trim() === "" ? 0 : parseQtyInput(mfEvery);
     const free = mfFree.trim() === "" ? 0 : parseQtyInput(mfFree);
-    if (every === null || free === null) return setError("MF kuralı okunamadı.");
+    if (every === null || free === null) return setError("MF okunamadı.");
     if (every > 0 !== free > 0) return setError("MF için iki kutuyu da doldurun.");
     if (
       warnings.includes("sale_not_below_psf") &&
       !(await feedback.confirm({
         title: "Yine kaydedilsin mi?",
         message:
-          "Eczaneye satışım perakende satış fiyatına eşit ya da yüksek; eczacı bu üründen kâr etmez.",
+          "Eczaneye Satışım, Perakende Satış Fiyatına eşit ya da yüksek; eczacı bu üründen kâr etmez.",
         confirmLabel: "Kaydet",
       }))
     ) {
@@ -306,137 +371,204 @@ function PriceEditor({
         : { mode: "computed" };
     onSave(
       { variantId: variant.id, costMinor: cost, policy },
-      { psf: psfSetting, pharmacistMarkup: markup, vatRate: vat, mfRule },
+      {
+        psf: psfSetting,
+        pharmacistMarkup: psfMode === "fixed" ? variant.pharmacistMarkup : markup,
+        vatRate: vat,
+        mfRule,
+      },
     );
     return undefined;
   };
 
+  const edit =
+    <T,>(set: (value: T) => void) =>
+    (value: T) => {
+      set(value);
+      setError(null);
+    };
+
   return (
-    <Modal title={variantLabel(catalog, variant)} onClose={onClose}>
-      <div className={styles.form}>
-        <label>
-          <span>Benim Alışım (KDV hariç)</span>
-          <MoneyField label="Benim alışım" value={cost} onCommit={setCost} placeholder="boş" />
-        </label>
-        <label>
-          <span>Kâr modu</span>
-          <select value={kind} onChange={(e) => setKind(e.target.value as ProfitPolicyKind)}>
-            {(Object.keys(POLICY_LABELS) as ProfitPolicyKind[]).map((k) => (
-              <option key={k} value={k}>
-                {POLICY_LABELS[k]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span>
-            {isRatePolicy(kind)
-              ? "Oran"
-              : kind === "fixed_price"
-                ? "Eczaneye Satışım"
-                : "Kâr tutarı"}
-          </span>
-          {isRatePolicy(kind) ? (
-            <RateField label="Oran" value={rate} onCommit={setRate} />
-          ) : (
-            <MoneyField label="Tutar" value={amount} onCommit={setAmount} />
+    <Modal
+      title={variantLabel(catalog, variant)}
+      onClose={onClose}
+      footer={
+        <>
+          {error !== null && (
+            <p className={ed.error} role="alert">
+              {error}
+            </p>
           )}
-        </label>
-        <div className={styles.preview}>
+          <div className={ed.footButtons}>
+            <button type="button" className="btn" onClick={onClose}>
+              Vazgeç
+            </button>
+            <button type="button" className="btnPrimary" onClick={() => void save()}>
+              Kaydet
+            </button>
+          </div>
+        </>
+      }
+    >
+      <div className={ed.chain} aria-live="polite" aria-label="Fiyat özeti">
+        <div className={ed.steps}>
           <span>
-            Eczaneye Satışım <b className="num">{fmtMoney(effectiveSale)}</b>
+            <small>Benim Alışım</small>
+            <b className="num">{fmtMoney(cost)}</b>
           </span>
+          <Icon icon={ArrowRight01Icon} size={16} />
           <span>
-            Bizim kâr <b className="num">{fmtMoney(ourProfit(effectiveSale, cost))}</b>
+            <small>Eczaneye Satışım</small>
+            <b className="num">{fmtMoney(sale)}</b>
+          </span>
+          <Icon icon={ArrowRight01Icon} size={16} />
+          <span>
+            <small>PSF</small>
+            <b className="num">{fmtMoney(psf)}</b>
           </span>
         </div>
-
-        <label>
-          <span>Perakende Satış Fiyatı</span>
-          <select
-            value={psfMode}
-            onChange={(e) => setPsfMode(e.target.value as PsfSetting["mode"])}
-          >
-            <option value="computed">Hesaplanan (satış × eczacı oranı)</option>
-            <option value="fixed">Sabit tutar</option>
-          </select>
-        </label>
-        {psfMode === "fixed" ? (
-          <label>
-            <span>Sabit Perakende Satış Fiyatı</span>
-            <MoneyField label="Sabit PSF" value={psfFixed} onCommit={setPsfFixed} />
-          </label>
-        ) : (
-          <label>
-            <span>
-              {`Ürüne özel eczacı oranı (boş = ${fmtRate(settings.defaultPharmacistMarkup, 0)})`}
-            </span>
-            <RateField
-              label="Eczacı oranı"
-              value={markup}
-              onCommit={setMarkup}
-              placeholder="varsayılan"
-            />
-          </label>
-        )}
-        <div className={styles.preview}>
+        <div className={ed.gains}>
           <span>
-            Perakende Satış Fiyatı <b className="num">{fmtMoney(psf)}</b>
+            Bizim kâr <b className="num">{amountWithRate(ourAmount, sale)}</b>
           </span>
           <span>
-            Eczacı{" "}
-            <b className="num">
-              {fmtRate(
-                effectiveSale !== null && psf !== null ? markupFromPsf(effectiveSale, psf) : null,
-              )}
-            </b>
+            Eczacı kârı <b className="num">{amountWithRate(pharmacistAmount, sale)}</b>
           </span>
         </div>
         {warnings.includes("sale_not_below_psf") && (
-          <p className={styles.errorText}>
-            Eczaneye satışım perakende satış fiyatına eşit ya da yüksek.
-          </p>
+          <p className={ed.bad}>Eczaneye Satışım, Perakende Satış Fiyatından düşük değil.</p>
         )}
         {warnings.includes("low_pharmacist_margin") && (
-          <p className={styles.warnText}>Eczacı marjı %10'un altında.</p>
+          <p className={ed.warn}>Eczacı kârı %10&apos;un altında.</p>
         )}
+      </div>
 
-        <label>
+      <section className={ed.section} aria-labelledby="editor-sale">
+        <h3 id="editor-sale">Eczaneye Satışım</h3>
+        <Choice
+          label="Eczaneye Satışım nasıl belirlensin"
+          value={source}
+          options={[
+            ["manual", "Elle yazarım"],
+            ["cost", "Alışımdan hesapla"],
+          ]}
+          onChange={edit(setSource)}
+        />
+        <label className={ed.field}>
           <span>
-            {`KDV (boş = ${fmtRate(effectiveVat({ ...variant, vatRate: null }, settings), 0)})`}
+            Benim Alışım (KDV hariç)
+            {source === "manual" && <small> · raporlarda kâr için</small>}
           </span>
-          <RateField label="KDV" value={vat} onCommit={setVat} placeholder="varsayılan" />
+          <MoneyField label="Benim Alışım" value={cost} onCommit={edit(setCost)} />
         </label>
-        <fieldset className={styles.mf}>
-          <legend>MF kuralı (katlanarak)</legend>
+        {source === "manual" ? (
+          <label className={ed.field}>
+            <span>Eczaneye Satışım (KDV hariç)</span>
+            <MoneyField
+              label="Eczaneye Satışım"
+              value={manualSale}
+              onCommit={edit(setManualSale)}
+            />
+          </label>
+        ) : (
+          <>
+            <Choice
+              label="Hesap yöntemi"
+              value={method}
+              options={COST_METHODS}
+              onChange={edit(setMethod)}
+            />
+            <label className={ed.field}>
+              <span>{METHOD_FIELD[method]}</span>
+              {method === "target_profit" ? (
+                <MoneyField
+                  key="profit"
+                  label={METHOD_FIELD[method]}
+                  value={profit}
+                  onCommit={edit(setProfit)}
+                />
+              ) : (
+                <RateField
+                  key={method}
+                  label={METHOD_FIELD[method]}
+                  value={rate}
+                  onCommit={edit(setRate)}
+                />
+              )}
+            </label>
+          </>
+        )}
+      </section>
+
+      <section className={ed.section} aria-labelledby="editor-psf">
+        <h3 id="editor-psf">Perakende Satış Fiyatı</h3>
+        <Choice
+          label="Perakende Satış Fiyatı nasıl belirlensin"
+          value={psfMode}
+          options={[
+            ["computed", "Eczacı oranından"],
+            ["fixed", "Elle yazarım"],
+          ]}
+          onChange={edit(setPsfMode)}
+        />
+        {psfMode === "fixed" ? (
+          <label className={ed.field}>
+            <span>Perakende Satış Fiyatı</span>
+            <MoneyField
+              label="Perakende Satış Fiyatı"
+              value={psfFixed}
+              onCommit={edit(setPsfFixed)}
+            />
+          </label>
+        ) : (
+          <label className={ed.field}>
+            <span>Eczacı oranı</span>
+            <RateField
+              label="Eczacı oranı"
+              value={markup}
+              onCommit={edit(setMarkup)}
+              placeholder={`${fmtRate(defaultMarkup, 0).replace("%", "")} (varsayılan)`}
+            />
+          </label>
+        )}
+      </section>
+
+      <section className={ed.section} aria-labelledby="editor-mf">
+        <h3 id="editor-mf">Mal fazlası (MF)</h3>
+        <div className={ed.mf}>
+          <span>Her</span>
           <input
             aria-label="Her kaç kutuya"
             inputMode="numeric"
-            placeholder="10"
             value={mfEvery}
-            onChange={(e) => setMfEvery(qtyInput(e.target.value))}
+            onChange={(e) => edit(setMfEvery)(qtyInput(e.target.value))}
           />
-          <span>alana</span>
+          <span>kutuya</span>
           <input
-            aria-label="Kaç kutu MF"
+            aria-label="Kaç kutu bedava"
             inputMode="numeric"
-            placeholder="1"
             value={mfFree}
-            onChange={(e) => setMfFree(qtyInput(e.target.value))}
+            onChange={(e) => edit(setMfFree)(qtyInput(e.target.value))}
           />
-          <span>bedava</span>
-        </fieldset>
-
-        {error !== null && <p className={styles.errorText}>{error}</p>}
-        <div className={styles.actions}>
-          <button type="button" className="btn" onClick={onClose}>
-            Vazgeç
-          </button>
-          <button type="button" className="btnPrimary" onClick={save}>
-            Kaydet
-          </button>
+          <span>kutu bedava</span>
+          <small>(katlanarak; boşsa MF yok)</small>
         </div>
-      </div>
+        <details className={ed.more} open={vat !== null}>
+          <summary>
+            Ürüne özel KDV (şu an {fmtRate(vat ?? defaultVat, 0)}
+            {vat === null ? ", varsayılan" : ""})
+          </summary>
+          <label className={ed.field}>
+            <span>KDV oranı</span>
+            <RateField
+              label="Ürüne özel KDV"
+              value={vat}
+              onCommit={edit(setVat)}
+              placeholder={`${fmtRate(defaultVat, 0).replace("%", "")} (varsayılan)`}
+            />
+          </label>
+        </details>
+      </section>
     </Modal>
   );
 }

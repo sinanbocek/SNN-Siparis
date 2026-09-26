@@ -258,6 +258,36 @@ describe("yönetim", () => {
     await waitFor(() => expect(mem.getItem("snn-siparis.catalog")).toBe(before));
   });
 
+  it("fiyat penceresi: alıştan % marj ile hesap, özet anında, Kaydet kataloğa yazar", async () => {
+    const { mem } = setup();
+    fireEvent.click(screen.getByRole("button", { name: "Yönetim" }));
+    fireEvent.change(await screen.findByLabelText("Şifre"), { target: { value: "0" } });
+    fireEvent.click(await screen.findByRole("button", { name: "Fiyatlama" }));
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Gardegen 60 Kapsül seç" }).closest("tr")!,
+    );
+    const dialog = await screen.findByRole("dialog", { name: "Gardegen 60 Kapsül" });
+    const inDialog = within(dialog);
+    fireEvent.click(inDialog.getByRole("radio", { name: "Alışımdan hesapla" }));
+    const cost = inDialog.getByLabelText("Benim Alışım");
+    fireEvent.change(cost, { target: { value: "1000" } });
+    fireEvent.blur(cost);
+    fireEvent.click(inDialog.getByRole("radio", { name: "% marj" }));
+    const rate = inDialog.getByLabelText("Marj (satış içindeki payım)");
+    fireEvent.change(rate, { target: { value: "60" } });
+    fireEvent.blur(rate);
+    // 1.000 ÷ (1 − 0,60) = 2.500; bizim kâr 1.500 = satışın %60'ı
+    const summary = inDialog.getByLabelText("Fiyat özeti");
+    expect(within(summary).getByText("₺2.500,00")).toBeTruthy();
+    expect(within(summary).getByText("₺1.500,00 · %60")).toBeTruthy();
+    fireEvent.click(inDialog.getByRole("button", { name: "Kaydet" }));
+    await waitFor(() =>
+      expect(mem.getItem("snn-siparis.catalog")).toMatch(
+        /"id":"gardegen-60"[^}]*"saleMinor":250000/,
+      ),
+    );
+  });
+
   it("ayarlar: boş KDV eski değere döner ve açıklama çıkar", async () => {
     await openSettings();
     const vat = screen.getByLabelText("KDV oranı");

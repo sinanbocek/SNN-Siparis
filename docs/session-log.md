@@ -83,5 +83,6 @@ WhatsApp PNG hiç denenmedi).
   anlaşılmıyordu → taslak onaylandı, önizlemeli karta çevrildi (`previewBulk`, `missingCostIds`).
 - Hata bulundu ve düzeltildi: Geri al 10 sn önceki yazıcıyı çağırınca "değişiklik yok" sanıp
   yazmıyordu (`useLatest`); arayüz testi yakaladı.
+- Ürün fiyat penceresi taslağı onaylandı ve uygulandı; `Modal` artık kaydırılmayan `footer` alır.
 - Sıradaki: kod incelemesinden iki küçük düzeltme (görsel eşlemesi, PNG'de yıl), sonra
   araştırmanın kalan P1/P2 maddeleri.
