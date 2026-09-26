@@ -616,7 +616,7 @@ function BulkCard({
             </button>
           </>
         )}
-        {" · "}sonuç yuvarlama adımına ({fmtMoney(step)}) yuvarlanır ve sabit fiyat olur.
+        {` · sonuç yuvarlama adımına (${fmtMoney(step)}) yuvarlanır ve sabit fiyat olur.`}
       </p>
       {preview !== null && value !== null && (
         <div className={shared.impact}>
