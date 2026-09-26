@@ -12,7 +12,8 @@ Ayarlar ekranı yeniden tasarlandı (karar 2a).
   örnek önce → sonra; Kaydet ya hep ya hiç, ardından 10 sn "Geri al"
 - Yuvarlama dört seçenekli düğme (Kuruş · 1 TL · 5 TL · 10 TL)
 - Boş bırakılan KDV ya da eczacı kârı eski değere döner ve açıklama çıkar
-- Şimdi kilitle, sürüm numarası ve "Güncellemeleri denetle"
+- Şimdi kilitle, sürüm numarası ve "Güncellemeleri denetle"; yönetim şeridindeki "Kilitle"
+  düğmesi kaldırıldı (aynı iş Ayarlar'da)
 - Uyarı rengi menekşe; geliştirici notu kaldırıldı
 
 ## 0.4.1 — 25.09.2026

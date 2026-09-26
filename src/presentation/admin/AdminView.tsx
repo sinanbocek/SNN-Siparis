@@ -2,7 +2,6 @@ import {
   Calculator01Icon,
   ChartHistogramIcon,
   LockIcon,
-  Logout01Icon,
   PackageIcon,
   Settings02Icon,
   Task01Icon,
@@ -79,9 +78,6 @@ export function AdminView(props: AdminProps) {
             </button>
           ))}
         </nav>
-        <button type="button" className="btn" onClick={props.onLock}>
-          <Icon icon={Logout01Icon} size={16} /> Kilitle
-        </button>
       </div>
       {tab === "reports" && (
         <ReportsTab
