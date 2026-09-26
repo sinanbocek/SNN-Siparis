@@ -30,6 +30,7 @@
 
 .steps > span {
   display: grid;
+  justify-items: center;
   gap: 2px;
   min-width: 0;
 }
@@ -40,7 +41,9 @@
   line-height: 1.2;
 }
 
+/* ortak .num sağa yaslar; burada başlığın tam altında ortalı dursun */
 .steps b {
+  text-align: center;
   color: var(--ink);
   font-size: 15px;
   font-weight: 650;

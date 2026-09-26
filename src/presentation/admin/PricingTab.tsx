@@ -423,7 +423,7 @@ function PriceEditor({
           </span>
           <Icon icon={ArrowRight01Icon} size={16} />
           <span>
-            <small>PSF</small>
+            <small>Perakende Satış</small>
             <b className="num">{fmtMoney(psf)}</b>
           </span>
         </div>
