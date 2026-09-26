@@ -9,7 +9,7 @@ import {
   type PriceSettingsImpact,
 } from "../../application/admin/settingsImpact.ts";
 import type { UpdateCheck } from "../../application/ports/devices.ts";
-import type { Rate } from "../../domain/abacus/index.ts";
+import { text, type Rate } from "../../domain/abacus/index.ts";
 import type { Catalog } from "../../domain/catalog/catalog.ts";
 import { nextOrderNo } from "../../domain/order/order.ts";
 import { ROUNDING_STEPS, type Settings } from "../../domain/settings/settings.ts";
@@ -198,7 +198,7 @@ function ProfileSections({
             autoCapitalize="characters"
             onChange={(e) => {
               const raw = e.target.value;
-              const clean = raw.replace(/[^A-Za-z0-9]/g, "").toLocaleUpperCase("tr-TR");
+              const clean = text.toAsciiUpper(raw.replace(/[^A-Za-z0-9]/g, ""));
               setPrefixNote(clean.length < raw.length);
               save(sheet, { orderPrefix: clean });
             }}
