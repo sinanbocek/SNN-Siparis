@@ -84,5 +84,7 @@ WhatsApp PNG hiç denenmedi).
 - Hata bulundu ve düzeltildi: Geri al 10 sn önceki yazıcıyı çağırınca "değişiklik yok" sanıp
   yazmıyordu (`useLatest`); arayüz testi yakaladı.
 - Ürün fiyat penceresi taslağı onaylandı ve uygulandı; `Modal` artık kaydırılmayan `footer` alır.
+- Ürünler sayfası: üç alternatif çizildi, A (kompakt liste + pencere) seçildi ve uygulandı; eski
+  ürün stilleri admin.module.css'ten silindi.
 - Sıradaki: kod incelemesinden iki küçük düzeltme (görsel eşlemesi, PNG'de yıl), sonra
   araştırmanın kalan P1/P2 maddeleri.

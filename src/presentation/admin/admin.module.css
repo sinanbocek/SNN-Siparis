@@ -175,11 +175,6 @@
   font-weight: 500;
 }
 
-.warnText {
-  color: var(--warn);
-  font-size: 13px;
-}
-
 .link {
   padding: 0;
   border: 0;
@@ -189,54 +184,7 @@
   text-decoration: underline;
 }
 
-.iconButton {
-  display: inline-grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--mute);
-}
-
-.iconButton:hover:not(:disabled) {
-  border-color: var(--line-strong);
-  background: var(--surface);
-  color: var(--ink);
-}
-
-.iconButton:disabled {
-  opacity: 0.35;
-}
-
-/* formlar */
-.form {
-  display: grid;
-  gap: 12px;
-}
-
-.form label,
-.familyFields label {
-  display: grid;
-  gap: 6px;
-  min-width: 0;
-  color: var(--ink-2);
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 12px;
-}
-
-.row > label {
-  flex: 1;
-}
-
+/* onay kutusu satırı (Veri) */
 .check {
   display: flex !important;
   align-items: center;
@@ -244,132 +192,6 @@
   min-height: var(--control-h);
   color: var(--ink) !important;
   font-size: 13px !important;
-}
-
-.short {
-  max-width: 120px;
-}
-
-.preview {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface-muted);
-  color: var(--mute);
-  font-size: 13px;
-}
-
-.preview b {
-  margin-left: 6px;
-  color: var(--ink);
-  font-weight: 600;
-}
-
-.mf {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  padding: 4px 12px 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  font-size: 13px;
-}
-
-.mf legend {
-  padding: 0 6px;
-  color: var(--ink-2);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.mf input {
-  width: 72px !important;
-  text-align: center;
-}
-
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding-top: 4px;
-}
-
-/* ürünler */
-.familyList {
-  display: grid;
-  gap: 16px;
-}
-
-.family {
-  display: grid;
-  gap: 12px;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow);
-}
-
-.familyHead {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.familyImage {
-  display: grid;
-  gap: 6px;
-  width: 120px;
-  justify-items: start;
-}
-
-.familyImage > span:first-child,
-.familyImage > button:first-child {
-  width: 120px;
-  height: 120px;
-}
-
-.familyFields {
-  flex: 1;
-  display: grid;
-  gap: 10px;
-  min-width: 220px;
-}
-
-.familyFields input[type="color"] {
-  width: 64px;
-  height: var(--control-h);
-  padding: 3px;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
-  background: var(--surface);
-}
-
-.uploadButton {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 4px;
-  height: 30px;
-  padding: 0 10px;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  box-shadow: var(--shadow-sm);
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.rowActions {
-  white-space: nowrap;
-  text-align: right;
 }
 
 .box {
@@ -494,11 +316,6 @@
 
   .stack .cellWarn:empty {
     display: none;
-  }
-
-  .stack .rowActions {
-    grid-column: 1 / -1;
-    justify-content: flex-end;
   }
 
   .stack td:has(> input:not([type="checkbox"])) {

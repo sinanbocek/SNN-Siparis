@@ -27,6 +27,9 @@ Ayarlar ekranı yeniden tasarlandı (karar 2a).
 - Kaydet'e basınca düğme kilitlenir ("Kaydediliyor…"), ardından "Kayıt güncellendi" bildirimi
 - "Bizim kâr" → **Benim kârım** (fiyat tablosu ve pencere)
 - Yönetim sekme sırası: Ürünler · Fiyatlama · Raporlar · Ayarlar · Veri; yönetim Ürünler ile açılır
+- **Ürünler** yeniden (taslak A): kompakt liste, her çeşit tek satır; Yayında aç-kapa satırda;
+  satıra dokununca düzenleme penceresi (ad, birim; görsel, sıra, sil); grup işlemleri ⋮ ile;
+  fiyatsız çeşit satırda "Fiyat yok" diye işaretli; Kaydet kilidi ve "Kayıt güncellendi"
 
 ## 0.4.1 — 25.09.2026
 

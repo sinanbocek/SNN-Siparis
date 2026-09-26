@@ -295,6 +295,40 @@ describe("yönetim", () => {
     );
   });
 
+  it("ürünler: satır pencerede düzenlenir; aç-kapa hemen; yeni çeşit", async () => {
+    const { mem } = setup();
+    fireEvent.click(screen.getByRole("button", { name: "Yönetim" }));
+    fireEvent.change(await screen.findByLabelText("Şifre"), { target: { value: "0" } });
+    // yönetim Ürünler ile açılır
+    fireEvent.click(await screen.findByRole("button", { name: "Gardegen 60 Kapsül düzenle" }));
+    const dialog = await screen.findByRole("dialog", { name: "Gardegen 60 Kapsül" });
+    fireEvent.change(within(dialog).getByLabelText("Çeşit adı"), {
+      target: { value: "60 Kapsül Yeni" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Kaydet" }));
+    expect(await screen.findByText("Kayıt güncellendi.")).toBeTruthy();
+    expect(mem.getItem("snn-siparis.catalog")).toContain("60 Kapsül Yeni");
+
+    const toggle = screen.getByRole("switch", { name: "Gardegen 60 Kapsül Yeni yayında" });
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-checked")).toBe("false");
+    const saved = JSON.parse(mem.getItem("snn-siparis.catalog") ?? "{}") as {
+      data: { variants: { name: string; active: boolean }[] };
+    };
+    expect(saved.data.variants.find((v) => v.name === "60 Kapsül Yeni")?.active).toBe(false);
+    expect(screen.queryByRole("dialog")).toBeNull();
+
+    const group = screen.getByRole("region", { name: "Gardegen" });
+    fireEvent.click(within(group).getByRole("button", { name: "Çeşit ekle" }));
+    const add = await screen.findByRole("dialog", { name: "Gardegen · yeni çeşit" });
+    fireEvent.click(within(add).getByRole("button", { name: "Kaydet" }));
+    expect(within(add).getByRole("alert").textContent).toBe("Çeşit adını yazın.");
+    fireEvent.change(within(add).getByLabelText("Çeşit adı"), { target: { value: "30 Kapsül" } });
+    fireEvent.click(within(add).getByRole("button", { name: "Kaydet" }));
+    expect(await within(group).findByText(/Fiyat yok/)).toBeTruthy();
+    expect(mem.getItem("snn-siparis.catalog")).toContain("30 Kapsül");
+  });
+
   it("ayarlar: boş KDV eski değere döner ve açıklama çıkar", async () => {
     await openSettings();
     const vat = screen.getByLabelText("KDV oranı");
