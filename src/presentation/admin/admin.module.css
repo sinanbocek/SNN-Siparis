@@ -70,6 +70,15 @@
   width: 120px;
 }
 
+/* ikili seçim: yazı kadar geniş, boş yarım kalmaz */
+.dirSeg {
+  width: 180px;
+}
+
+.unitSeg {
+  width: 100px;
+}
+
 .scope {
   color: var(--ink);
   font-weight: 600;
@@ -525,12 +534,22 @@
     font-size: 13px;
   }
 
+  /* telefon: üstte yön tam genişlik; altta tutar + birim; en altta Önizle */
+  .bulkControls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 100px;
+  }
+
+  .dirSeg,
+  .previewBtn {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
   .bulkValue {
-    flex: 1;
     width: auto;
   }
 
-  .bulkControls > :global(.btn),
   .estimateRow > :global(.btn) {
     width: 100%;
   }

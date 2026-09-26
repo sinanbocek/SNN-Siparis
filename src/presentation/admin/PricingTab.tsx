@@ -548,7 +548,7 @@ function BulkCard({
         Seçili ürünlerin Eczaneye Satışım fiyatını değiştirir. Seçim yoksa tüm ürünlere uygulanır.
       </p>
       <div className={styles.bulkControls}>
-        <div className={shared.segmented} role="radiogroup" aria-label="Yön">
+        <div className={`${shared.segmented} ${styles.dirSeg}`} role="radiogroup" aria-label="Yön">
           {DIRECTIONS.map(([id, label]) => (
             <button
               key={id}
@@ -580,7 +580,11 @@ function BulkCard({
             />
           )}
         </div>
-        <div className={shared.segmented} role="radiogroup" aria-label="Birim">
+        <div
+          className={`${shared.segmented} ${styles.unitSeg}`}
+          role="radiogroup"
+          aria-label="Birim"
+        >
           {UNITS.map(([id, label]) => (
             <button
               key={id}
@@ -598,7 +602,7 @@ function BulkCard({
           ))}
         </div>
         {preview === null && (
-          <button type="button" className="btn" onClick={showPreview}>
+          <button type="button" className={`btn ${styles.previewBtn}`} onClick={showPreview}>
             Önizle
           </button>
         )}
