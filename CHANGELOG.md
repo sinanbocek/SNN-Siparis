@@ -15,6 +15,11 @@ Ayarlar ekranı yeniden tasarlandı (karar 2a).
 - Şimdi kilitle, sürüm numarası ve "Güncellemeleri denetle"; yönetim şeridindeki "Kilitle"
   düğmesi kaldırıldı (aynı iş Ayarlar'da)
 - Uyarı rengi menekşe; geliştirici notu kaldırıldı
+- Fiyatlama → **Toplu fiyat değişikliği** kartı: Artır/Azalt, %/TL, tek tutar; Önizle
+  ("N ürünün fiyatı %10 düşecek", örnek önce → sonra), Uygula; seçim yoksa onay; 10 sn Geri al.
+  İndirim artık yapılabiliyor; sıfırın altına düşecek ürün atlanır ve söylenir
+- Alış tahmini ayrı satırda, yalnız alışı boş ürün varsa görünür; Geri al'lı
+- Yönetim şeridindeki "Yönetim" etiketi kaldırıldı
 
 ## 0.4.1 — 25.09.2026
 

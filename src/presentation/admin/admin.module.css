@@ -15,19 +15,6 @@
   gap: 12px;
 }
 
-.adminTag {
-  display: inline-flex;
-  align-items: center;
-  height: 26px;
-  padding: 0 10px;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
 .adminBar > :global(.tabs) {
   flex: 1;
   max-width: max-content;
@@ -48,30 +35,58 @@
   line-height: 1.4;
 }
 
-/* toplu işlem çubuğu */
-.bulkBar {
+/* toplu fiyat değişikliği kartı ve alış tahmini satırı */
+.bulkCard,
+.estimateRow {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.bulkCard h3,
+.estimateRow h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.bulkCard > p,
+.estimateRow p {
+  margin: 0;
+}
+
+.bulkControls {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  padding: 12px 14px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow);
 }
 
-.bulkCount {
-  min-width: 110px;
-  font-size: 13px;
+.bulkValue {
+  width: 120px;
+}
+
+.scope {
+  color: var(--ink);
   font-weight: 600;
 }
 
-.bulkGroup {
+.estimateRow {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  width: 220px;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+
+.estimateRow > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
 }
 
 /* tablo: ihale .table */
@@ -510,11 +525,13 @@
     font-size: 13px;
   }
 
-  .bulkGroup {
-    width: 100%;
+  .bulkValue {
+    flex: 1;
+    width: auto;
   }
 
-  .bulkBar > :global(.btn) {
+  .bulkControls > :global(.btn),
+  .estimateRow > :global(.btn) {
     width: 100%;
   }
 }

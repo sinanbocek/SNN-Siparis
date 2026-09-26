@@ -64,7 +64,6 @@ export function AdminView(props: AdminProps) {
   return (
     <section className={styles.admin} aria-label="Yönetim">
       <div className={styles.adminBar}>
-        <span className={styles.adminTag}>Yönetim</span>
         <nav className="tabs" aria-label="Yönetim sekmeleri">
           {TABS.map((t) => (
             <button

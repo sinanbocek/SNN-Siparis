@@ -200,8 +200,7 @@ describe("yönetim", () => {
     fireEvent.change(pass, { target: { value: "1" } });
     expect(screen.getByText("Şifre yanlış.")).toBeTruthy();
     fireEvent.change(screen.getByLabelText("Şifre"), { target: { value: "0" } });
-    expect(await screen.findByText("Yönetim")).toBeTruthy();
-    expect(screen.getByRole("navigation", { name: "Yönetim sekmeleri" })).toBeTruthy();
+    expect(await screen.findByRole("navigation", { name: "Yönetim sekmeleri" })).toBeTruthy();
   });
 
   async function openSettings() {
@@ -236,6 +235,27 @@ describe("yönetim", () => {
     await waitFor(() =>
       expect(mem.getItem("snn-siparis.settings")).toContain(`"defaultPharmacistMarkup":0.2,`),
     );
+  });
+
+  it("toplu fiyat: önizleme fiyatı değiştirmez; seçim yokken onay; Uygula, sonra Geri al", async () => {
+    const { mem } = setup();
+    fireEvent.click(screen.getByRole("button", { name: "Yönetim" }));
+    fireEvent.change(await screen.findByLabelText("Şifre"), { target: { value: "0" } });
+    fireEvent.click(await screen.findByRole("button", { name: "Fiyatlama" }));
+    const before = mem.getItem("snn-siparis.catalog");
+    fireEvent.click(screen.getByRole("radio", { name: "Azalt" }));
+    const field = screen.getByLabelText("Toplu değişiklik yüzdesi");
+    fireEvent.change(field, { target: { value: "10" } });
+    fireEvent.blur(field);
+    fireEvent.click(screen.getByRole("button", { name: "Önizle" }));
+    expect(await screen.findByText(/ürünün fiyatı %10 düşecek\.$/)).toBeTruthy();
+    expect(mem.getItem("snn-siparis.catalog")).toBe(before);
+    fireEvent.click(screen.getByRole("button", { name: "Uygula" }));
+    const dialog = await screen.findByRole("alertdialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Uygula" }));
+    await waitFor(() => expect(mem.getItem("snn-siparis.catalog")).not.toBe(before));
+    fireEvent.click(await screen.findByRole("button", { name: "Geri al" }));
+    await waitFor(() => expect(mem.getItem("snn-siparis.catalog")).toBe(before));
   });
 
   it("ayarlar: boş KDV eski değere döner ve açıklama çıkar", async () => {

@@ -1,12 +1,16 @@
 import { Alert02Icon, Calculator01Icon, CancelCircleIcon } from "@hugeicons/core-free-icons";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   applyCostEntry,
-  bulkAdjust,
   costEntryOf,
   estimateMissingCosts,
+  missingCostIds,
+  previewBulk,
+  type BulkChange,
+  type BulkPreview,
   type PricingState,
 } from "../../application/admin/pricing.ts";
+import { math } from "../../domain/abacus/index.ts";
 import {
   effectiveMarkup,
   effectiveVat,
@@ -33,6 +37,7 @@ import { fmtMoney, fmtRate } from "../parts/format.ts";
 import { useFeedback } from "../parts/feedback.tsx";
 import { Icon, Modal, MoneyField, RateField } from "../parts/parts.tsx";
 import styles from "./admin.module.css";
+import shared from "./settings.module.css";
 
 const POLICY_LABELS: Record<ProfitPolicyKind, string> = {
   markup: "Alışıma % ekle",
@@ -50,8 +55,6 @@ interface Props {
 export function PricingTab({ state, settings, onChange }: Props) {
   const [selected, setSelected] = useState<readonly string[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
-  const [bulkRate, setBulkRate] = useState<number | null>(null);
-  const [bulkAmount, setBulkAmount] = useState<number | null>(null);
   const rows = useMemo(
     () =>
       [...state.catalog.variants].sort((a, b) => {
@@ -71,64 +74,16 @@ export function PricingTab({ state, settings, onChange }: Props) {
 
   return (
     <div className={styles.tab}>
-      <div className={styles.bulkBar}>
-        <span className={styles.bulkCount}>
-          {selected.length > 0 ? `${selected.length} ürün seçili` : "Tüm ürünler"}
-        </span>
-        <div className={styles.bulkGroup}>
-          <RateField label="Toplu yüzde" value={bulkRate} onCommit={setBulkRate} placeholder="+5" />
-          <button
-            type="button"
-            className="btn"
-            disabled={bulkRate === null}
-            onClick={() => {
-              if (bulkRate === null) return;
-              onChange(bulkAdjust(state, target, { kind: "percent", rate: bulkRate }, step));
-              setBulkRate(null);
-            }}
-          >
-            % uygula
-          </button>
-        </div>
-        <div className={styles.bulkGroup}>
-          <MoneyField
-            label="Toplu tutar"
-            value={bulkAmount}
-            onCommit={setBulkAmount}
-            placeholder="TL"
-          />
-          <button
-            type="button"
-            className="btn"
-            disabled={bulkAmount === null}
-            onClick={() => {
-              if (bulkAmount === null) return;
-              onChange(
-                bulkAdjust(state, target, { kind: "amount", amountMinor: bulkAmount }, step),
-              );
-              setBulkAmount(null);
-            }}
-          >
-            TL ekle
-          </button>
-        </div>
-        <button
-          type="button"
-          className="btn"
-          onClick={() => onChange(estimateMissingCosts(state, target))}
-        >
-          <Icon icon={Calculator01Icon} size={18} /> %40 marjdan tahmin et
-        </button>
-        {selected.length > 0 && (
-          <button type="button" className={styles.link} onClick={() => setSelected([])}>
-            Seçimi kaldır
-          </button>
-        )}
-      </div>
-      <p className={styles.note}>
-        Toplu değişiklik sonucu yuvarlama adımına ({fmtMoney(step)}) yuvarlanır ve sabit fiyat olur.
-        Tahmin yalnız maliyeti boş ürünlere yazılır.
-      </p>
+      <BulkCard
+        state={state}
+        targetIds={target}
+        selectedCount={selected.length}
+        totalCount={allIds.length}
+        step={step}
+        onChange={onChange}
+        onClearSelection={() => setSelected([])}
+      />
+      <EstimateRow state={state} onChange={onChange} />
 
       <div className={styles.tableWrap}>
         <table className={`${styles.table} ${styles.stack}`}>
@@ -483,5 +438,266 @@ function PriceEditor({
         </div>
       </div>
     </Modal>
+  );
+}
+
+/**
+ * Geri al 10 sn sonra çağrılır: o anki yazıcıyı kullanmalı. Eski yazıcı eski durumla
+ * karşılaştırıp "değişiklik yok" sanır ve hiçbir şey yazmaz.
+ */
+function useLatest<T>(value: T) {
+  const ref = useRef(value);
+  ref.current = value;
+  return ref;
+}
+
+type Direction = "up" | "down";
+type Unit = "percent" | "amount";
+
+/** Kutudaki pozitif değer + yön → işaretli değişiklik (indirimde eksi). */
+function toChange(direction: Direction, unit: Unit, value: number): BulkChange {
+  const signed = direction === "down" ? math.sub(0, value) : value;
+  return unit === "percent"
+    ? { kind: "percent", rate: signed }
+    : { kind: "amount", amountMinor: signed };
+}
+
+function changeText(direction: Direction, unit: Unit, value: number): string {
+  const whole = Number.isInteger(math.mul(value, 100));
+  const size = unit === "percent" ? fmtRate(value, whole ? 0 : 1) : fmtMoney(value);
+  return `${size} ${direction === "up" ? "artacak" : "düşecek"}`;
+}
+
+/**
+ * Toplu fiyat değişikliği (proje sahibi 26.09.2026): yön, birim, tek tutar; önce önizleme,
+ * sonra Uygula. Seçim yoksa onay sorulur; ardından 10 sn Geri al.
+ */
+function BulkCard({
+  state,
+  targetIds,
+  selectedCount,
+  totalCount,
+  step,
+  onChange,
+  onClearSelection,
+}: {
+  state: PricingState;
+  targetIds: readonly string[];
+  selectedCount: number;
+  totalCount: number;
+  step: number;
+  onChange: (state: PricingState) => void;
+  onClearSelection: () => void;
+}) {
+  const feedback = useFeedback();
+  const latestChange = useLatest(onChange);
+  const [direction, setDirection] = useState<Direction>("up");
+  const [unit, setUnit] = useState<Unit>("percent");
+  const [value, setValue] = useState<number | null>(null);
+  const [fieldKey, setFieldKey] = useState(0);
+  const [preview, setPreview] = useState<BulkPreview | null>(null);
+
+  const edit = (change: () => void) => {
+    change();
+    setPreview(null);
+  };
+  const reset = () => {
+    setValue(null);
+    setPreview(null);
+    setFieldKey((k) => k + 1);
+  };
+
+  const showPreview = () => {
+    if (value === null || value <= 0) {
+      feedback.toast({ text: "Önce bir tutar yazın.", tone: "info" });
+      return;
+    }
+    setPreview(previewBulk(state, targetIds, toChange(direction, unit, value), step));
+  };
+
+  const apply = async () => {
+    if (preview === null || value === null) return;
+    if (selectedCount === 0) {
+      const ok = await feedback.confirm({
+        title: "Tüm ürünlerin fiyatı değişecek",
+        message: `${preview.changed} ürünün Eczaneye Satışım fiyatı ${changeText(direction, unit, value)}.`,
+        confirmLabel: "Uygula",
+      });
+      if (!ok) return;
+    }
+    const before = state;
+    onChange(preview.next);
+    feedback.toast({
+      text: `${preview.changed} ürünün fiyatı güncellendi.`,
+      tone: "success",
+      action: {
+        label: "Geri al",
+        onClick: () => {
+          latestChange.current(before);
+          feedback.toast({ text: "Toplu değişiklik geri alındı.", tone: "info" });
+        },
+      },
+    });
+    reset();
+  };
+
+  return (
+    <section className={styles.bulkCard} aria-labelledby="bulk-title">
+      <h3 id="bulk-title">Toplu fiyat değişikliği</h3>
+      <p className={styles.note}>
+        Seçili ürünlerin Eczaneye Satışım fiyatını değiştirir. Seçim yoksa tüm ürünlere uygulanır.
+      </p>
+      <div className={styles.bulkControls}>
+        <div className={shared.segmented} role="radiogroup" aria-label="Yön">
+          {DIRECTIONS.map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              aria-checked={direction === id}
+              onClick={() => edit(() => setDirection(id))}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className={styles.bulkValue}>
+          {unit === "percent" ? (
+            <RateField
+              key={`p-${fieldKey}`}
+              label="Toplu değişiklik yüzdesi"
+              value={value}
+              placeholder="5"
+              onCommit={(v) => edit(() => setValue(v))}
+            />
+          ) : (
+            <MoneyField
+              key={`a-${fieldKey}`}
+              label="Toplu değişiklik tutarı"
+              value={value}
+              placeholder="10"
+              onCommit={(v) => edit(() => setValue(v))}
+            />
+          )}
+        </div>
+        <div className={shared.segmented} role="radiogroup" aria-label="Birim">
+          {UNITS.map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              aria-checked={unit === id}
+              onClick={() => {
+                if (unit === id) return;
+                setUnit(id);
+                reset();
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {preview === null && (
+          <button type="button" className="btn" onClick={showPreview}>
+            Önizle
+          </button>
+        )}
+      </div>
+      <p className={styles.note}>
+        Kapsam:{" "}
+        <b className={styles.scope}>
+          {selectedCount > 0 ? `${selectedCount} seçili ürün` : `Tüm ürünler (${totalCount})`}
+        </b>
+        {selectedCount > 0 && (
+          <>
+            {" "}
+            <button type="button" className={styles.link} onClick={onClearSelection}>
+              Seçimi kaldır
+            </button>
+          </>
+        )}
+        {" · "}sonuç yuvarlama adımına ({fmtMoney(step)}) yuvarlanır ve sabit fiyat olur.
+      </p>
+      {preview !== null && value !== null && (
+        <div className={shared.impact}>
+          <div className={shared.impactText} aria-live="polite">
+            <strong>
+              {preview.changed > 0
+                ? `${preview.changed} ürünün fiyatı ${changeText(direction, unit, value)}.`
+                : "Hiçbir ürünün fiyatı değişmeyecek."}
+            </strong>
+            {preview.example !== null && (
+              <span>
+                Örnek: {preview.example.label}{" "}
+                <span className="num">{fmtMoney(preview.example.beforeMinor)}</span> →{" "}
+                <b className="num">{fmtMoney(preview.example.afterMinor)}</b>
+              </span>
+            )}
+            {preview.skipped > 0 && (
+              <span>{preview.skipped} ürün sıfırın altına düşeceği için değişmeyecek.</span>
+            )}
+          </div>
+          <div className={shared.actions}>
+            <button type="button" className="btn" onClick={() => setPreview(null)}>
+              Vazgeç
+            </button>
+            <button
+              type="button"
+              className="btnPrimary"
+              disabled={preview.changed === 0}
+              onClick={() => void apply()}
+            >
+              Uygula
+            </button>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+const DIRECTIONS: readonly (readonly [Direction, string])[] = [
+  ["up", "Artır"],
+  ["down", "Azalt"],
+];
+
+const UNITS: readonly (readonly [Unit, string])[] = [
+  ["percent", "%"],
+  ["amount", "TL"],
+];
+
+/** Alışı boş ürünler için tahmin; yalnız böyle ürün varsa görünür. */
+function EstimateRow({
+  state,
+  onChange,
+}: {
+  state: PricingState;
+  onChange: (state: PricingState) => void;
+}) {
+  const feedback = useFeedback();
+  const latestChange = useLatest(onChange);
+  const missing = missingCostIds(state);
+  if (missing.length === 0) return null;
+  const estimate = () => {
+    const before = state;
+    onChange(estimateMissingCosts(state, missing));
+    feedback.toast({
+      text: `${missing.length} ürüne tahmini alış yazıldı.`,
+      tone: "success",
+      action: { label: "Geri al", onClick: () => latestChange.current(before) },
+    });
+  };
+  return (
+    <section className={styles.estimateRow} aria-labelledby="estimate-title">
+      <div>
+        <h3 id="estimate-title">{missing.length} ürünün Benim Alışım fiyatı boş</h3>
+        <p className={styles.note}>
+          Raporlarda bu ürünlerin kârı hesaplanamaz. Tahmin: Eczaneye Satışım fiyatının %60&apos;ı.
+        </p>
+      </div>
+      <button type="button" className="btn" onClick={estimate}>
+        <Icon icon={Calculator01Icon} size={18} /> Alışları tahmin et
+      </button>
+    </section>
   );
 }

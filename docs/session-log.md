@@ -79,5 +79,9 @@ WhatsApp PNG hiç denenmedi).
 - Fiyat ayarı + katalog `writeAllOrNothing` ile birlikte yazılır; Geri al aynı yoldan.
 - `UpdateSignal` sürüm ve `check()` taşıyor (Ayarlar › Güncellemeleri denetle).
 - Ölçüm: 375 / 800 / 1180 px'te yatay taşma yok; telefonda Kaydet çubuğu alt gezinmenin üstünde.
+- Proje sahibi görsel testte: Kilitle düğmesi ve "Yönetim" etiketi kaldırıldı; toplu fiyat kutusu
+  anlaşılmıyordu → taslak onaylandı, önizlemeli karta çevrildi (`previewBulk`, `missingCostIds`).
+- Hata bulundu ve düzeltildi: Geri al 10 sn önceki yazıcıyı çağırınca "değişiklik yok" sanıp
+  yazmıyordu (`useLatest`); arayüz testi yakaladı.
 - Sıradaki: kod incelemesinden iki küçük düzeltme (görsel eşlemesi, PNG'de yıl), sonra
   araştırmanın kalan P1/P2 maddeleri.
