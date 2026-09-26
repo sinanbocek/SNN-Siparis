@@ -27,3 +27,6 @@ export interface ImageResizer {
   /** Yüklenen görseli ~600 px WebP data URL'ye küçültür (D3). */
   resize(file: File): Promise<string>;
 }
+
+/** Güncelleme denetimi: "ready" = yeni sürüm iniyor ya da hazır; "unavailable" = çevrimdışı çalışma kurulmamış. */
+export type UpdateCheck = "ready" | "current" | "failed" | "unavailable";

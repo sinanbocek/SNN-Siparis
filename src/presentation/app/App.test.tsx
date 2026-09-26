@@ -43,7 +43,12 @@ function setup(mem = new MemoryStorage()) {
       share={share}
       png={{ render: async () => new Blob(["png"], { type: "image/png" }) }}
       resizer={{ resize: async () => "data:image/webp;base64,AA" }}
-      updates={{ subscribe: () => () => undefined, apply: () => undefined }}
+      updates={{
+        version: "0.0.0",
+        subscribe: () => () => undefined,
+        check: () => Promise.resolve("current"),
+        apply: () => undefined,
+      }}
       now={() => "2026-09-25T10:00:00.000Z"}
       admin={{ costStore: createCostStore(mem) }}
     />,
@@ -197,6 +202,50 @@ describe("yönetim", () => {
     fireEvent.change(screen.getByLabelText("Şifre"), { target: { value: "0" } });
     expect(await screen.findByText("Yönetim")).toBeTruthy();
     expect(screen.getByRole("navigation", { name: "Yönetim sekmeleri" })).toBeTruthy();
+  });
+
+  async function openSettings() {
+    const env = setup();
+    fireEvent.click(screen.getByRole("button", { name: "Yönetim" }));
+    fireEvent.change(await screen.findByLabelText("Şifre"), { target: { value: "0" } });
+    fireEvent.click(await screen.findByRole("button", { name: "Ayarlar" }));
+    return env;
+  }
+
+  it("ayarlar: metin ayarı kendiliğinden kaydedilir ve 'Kaydedildi' görünür", async () => {
+    const { mem } = await openSettings();
+    fireEvent.change(screen.getByLabelText("Ad soyad"), { target: { value: "Ayşe Deniz" } });
+    expect(await screen.findByText("Kaydedildi")).toBeTruthy();
+    expect(mem.getItem("snn-siparis.settings")).toContain("Ayşe Deniz");
+    fireEvent.change(screen.getByLabelText("Numara öneki"), { target: { value: "ab-1" } });
+    expect(screen.getByText("Önekte yalnız harf ve rakam kullanılabilir.")).toBeTruthy();
+    expect(screen.getByText(/^AB1-\d{8}-01$/)).toBeTruthy();
+  });
+
+  it("ayarlar: fiyat ayarı taslakta bekler, etki özeti, Kaydet, sonra Geri al", async () => {
+    const { mem } = await openSettings();
+    const markup = screen.getByLabelText("Eczacı kârı");
+    fireEvent.change(markup, { target: { value: "25" } });
+    fireEvent.blur(markup);
+    expect(await screen.findByText(/ürünün fiyatı değişecek\.$/)).toBeTruthy();
+    expect(mem.getItem("snn-siparis.settings") ?? "").not.toContain("0.25");
+    fireEvent.click(screen.getByRole("button", { name: "Kaydet" }));
+    await waitFor(() => expect(mem.getItem("snn-siparis.settings")).toContain("0.25"));
+    expect(screen.queryByRole("button", { name: "Kaydet" })).toBeNull();
+    fireEvent.click(await screen.findByRole("button", { name: "Geri al" }));
+    await waitFor(() =>
+      expect(mem.getItem("snn-siparis.settings")).toContain(`"defaultPharmacistMarkup":0.2,`),
+    );
+  });
+
+  it("ayarlar: boş KDV eski değere döner ve açıklama çıkar", async () => {
+    await openSettings();
+    const vat = screen.getByLabelText("KDV oranı");
+    fireEvent.change(vat, { target: { value: "" } });
+    fireEvent.blur(vat);
+    expect(await screen.findByText("KDV boş olamaz; %1 geri yüklendi.")).toBeTruthy();
+    expect((screen.getByLabelText("KDV oranı") as HTMLInputElement).value).toBe("1");
+    expect(screen.queryByRole("button", { name: "Kaydet" })).toBeNull();
   });
 });
 

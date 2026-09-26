@@ -1,0 +1,287 @@
+/*
+ * Ayarlar (karar 2a): geniş ekranda açıklamalı iki sütun (Polaris), dar ekranda gruplu liste
+ * (iOS): bölüm adı kartın üstünde, açıklama kartın altında dipnot.
+ */
+.page {
+  display: grid;
+  gap: 20px;
+  max-width: 880px;
+}
+
+.head h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.head p {
+  margin: 2px 0 0;
+  color: var(--mute);
+}
+
+.section {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.aside h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.aside p {
+  margin: 4px 0 0;
+  color: var(--mute);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.card {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field > span:first-child {
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.note {
+  display: block;
+  color: var(--mute);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.warn {
+  display: block;
+  color: var(--warn);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.error {
+  margin: 0;
+  color: var(--bad);
+  font-size: 13px;
+}
+
+.saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--good);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.prefix {
+  max-width: 140px;
+  text-transform: uppercase;
+}
+
+/* sipariş resmi önizlemesi: başlık + örnek numara, resimdeki gibi */
+.preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 12px 14px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+}
+
+.previewTitle {
+  min-width: 0;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.previewNo {
+  color: var(--ink-2);
+}
+
+.rates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 160px));
+  gap: 12px;
+}
+
+/* yuvarlama: dört seçenek görünür, tek dokunuş */
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2px;
+  max-width: 400px;
+  padding: 3px;
+  border-radius: var(--radius);
+  background: #eef0f4;
+}
+
+.segmented > button {
+  min-width: 0;
+  height: 38px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--mute);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.segmented > button:hover {
+  color: var(--ink);
+}
+
+.segmented > button[aria-checked="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+
+.segmented > button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* etki özeti + Kaydet / Vazgeç */
+.impact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--accent-ring);
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+}
+
+.impactText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.impactText strong {
+  font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* kilit ve sürüm satırları */
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.line + .line {
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.line > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+@media (max-width: 1023px) {
+  .page {
+    gap: 8px;
+  }
+
+  .section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 12px;
+    border-top: 0;
+  }
+
+  /* dar ekranda açıklama kartın altına iner */
+  .aside {
+    display: contents;
+  }
+
+  .aside h3 {
+    order: 0;
+    padding: 0 4px;
+    color: var(--ink-2);
+    font-size: 13px;
+  }
+
+  .card {
+    order: 1;
+  }
+
+  .aside p {
+    order: 2;
+    margin: 0;
+    padding: 0 4px;
+  }
+
+  /* Kaydet / Vazgeç başparmak bölgesinde, alt gezinmenin üstünde kalır */
+  .impact {
+    position: sticky;
+    bottom: 12px;
+    z-index: 5;
+    box-shadow: var(--shadow-lg);
+  }
+}
+
+@media (max-width: 700px) {
+  .impact {
+    bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+
+  .rates {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .segmented {
+    max-width: none;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .actions > button {
+    flex: 1;
+  }
+}

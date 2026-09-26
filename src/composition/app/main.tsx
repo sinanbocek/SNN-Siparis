@@ -11,18 +11,35 @@ import { createCostStore, createSalesStores } from "../../infrastructure/storage
 import { DEFAULT_SETTINGS } from "../../domain/settings/settings.ts";
 import { App, type UpdateSignal } from "../../presentation/app/App.tsx";
 import { SEED_CATALOG, SEED_IMAGES } from "../seed/seed.ts";
+import { version } from "../../../package.json";
 
 /** Tek bağlama noktası: depolar, tarayıcı yetenekleri, başlangıç verisi ve PWA güncellemesi. */
 function createUpdateSignal(): UpdateSignal {
   let ready = false;
+  let registration: ServiceWorkerRegistration | undefined;
   const listeners = new Set<(ready: boolean) => void>();
   const update = registerSW({
     onNeedRefresh() {
       ready = true;
       listeners.forEach((l) => l(true));
     },
+    onRegisteredSW(_url, reg) {
+      registration = reg;
+    },
   });
   return {
+    version,
+    async check() {
+      if (registration === undefined) return "unavailable";
+      try {
+        await registration.update();
+      } catch {
+        return "failed";
+      }
+      return ready || registration.installing !== null || registration.waiting !== null
+        ? "ready"
+        : "current";
+    },
     subscribe(listener) {
       listeners.add(listener);
       listener(ready);

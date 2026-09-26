@@ -17,6 +17,7 @@ import type { ImageMap } from "../../application/ports/stores.ts";
 import type { Catalog } from "../../domain/catalog/catalog.ts";
 import type { Settings } from "../../domain/settings/settings.ts";
 import { Icon } from "../parts/parts.tsx";
+import type { AppInfo } from "./AdminGate.tsx";
 import { DataTab } from "./DataTab.tsx";
 import { PricingTab } from "./PricingTab.tsx";
 import { ReportsTab } from "./ReportsTab.tsx";
@@ -48,7 +49,9 @@ export interface AdminProps {
   usageBytes: number | null;
   onPricingChange: (state: PricingState) => void;
   onCatalogChange: (catalog: Catalog) => void;
-  onSettingsChange: (settings: Settings) => void;
+  onSettingsChange: (settings: Settings) => string | null;
+  onPriceSettingsSave: (settings: Settings, catalog: Catalog) => string | null;
+  app: AppInfo;
   onImagesChange: (images: ImageMap) => Promise<string | null>;
   onExport: (withCosts: boolean, withImages: boolean) => void;
   onImport: (backup: BackupFile) => string | null;
@@ -107,7 +110,15 @@ export function AdminView(props: AdminProps) {
         />
       )}
       {tab === "settings" && (
-        <SettingsTab settings={props.settings} onChange={props.onSettingsChange} />
+        <SettingsTab
+          settings={props.settings}
+          pricing={props.pricing}
+          app={props.app}
+          today={props.today}
+          onChange={props.onSettingsChange}
+          onPriceSave={props.onPriceSettingsSave}
+          onLock={props.onLock}
+        />
       )}
       {tab === "data" && (
         <DataTab

@@ -1,5 +1,20 @@
 # Değişiklik Günlüğü
 
+## 0.5.0 — 26.09.2026
+
+Ayarlar ekranı yeniden tasarlandı (karar 2a).
+
+- Dört bölüm: Pazarlamacı, Sipariş resmi, Fiyat varsayılanları, Güvenlik ve uygulama;
+  tablette açıklamalı iki sütun, telefonda gruplu liste
+- Ad, telefon, başlık ve önek kendiliğinden kaydedilir; "✓ Kaydedildi" izi, hata olursa kırmızı satır
+- Sipariş resmi önizlemesi: başlık ve örnek numara; önek büyük harfe çevrilir, silinen karakter söylenir
+- Fiyat ayarları (KDV, eczacı kârı, yuvarlama) taslakta bekler: "N ürünün fiyatı değişecek",
+  örnek önce → sonra; Kaydet ya hep ya hiç, ardından 10 sn "Geri al"
+- Yuvarlama dört seçenekli düğme (Kuruş · 1 TL · 5 TL · 10 TL)
+- Boş bırakılan KDV ya da eczacı kârı eski değere döner ve açıklama çıkar
+- Şimdi kilitle, sürüm numarası ve "Güncellemeleri denetle"
+- Uyarı rengi menekşe; geliştirici notu kaldırıldı
+
 ## 0.4.1 — 25.09.2026
 
 Satış ekranı dokunuş kalitesi ve iki doğruluk düzeltmesi (kod incelemesi + UI/UX araştırması).

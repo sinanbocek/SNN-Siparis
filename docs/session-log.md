@@ -71,3 +71,13 @@ scratchpad'inde `ui-ux-arastirma.md`; kalıcı değil, gerekirse yeniden üretil
 klavye odak halkası, kontrast düzeltmeleri, uyarı rengi menekşe); kod incelemesinden görsel
 eşlemesinin `data:image`/`/products` ile sınırlanması ve PNG'de yıl; saha testi (gerçek cihazda
 WhatsApp PNG hiç denenmedi).
+
+## 26.09.2026 — Ayarlar yeniden tasarımı (v0.5.0)
+
+- Karar 2a uygulandı (PRD K40). Etki özeti `application/admin/settingsImpact.ts`: özet ile kayıt
+  aynı `rederiveSales` / `variantPsf` yolundan gider.
+- Fiyat ayarı + katalog `writeAllOrNothing` ile birlikte yazılır; Geri al aynı yoldan.
+- `UpdateSignal` sürüm ve `check()` taşıyor (Ayarlar › Güncellemeleri denetle).
+- Ölçüm: 375 / 800 / 1180 px'te yatay taşma yok; telefonda Kaydet çubuğu alt gezinmenin üstünde.
+- Sıradaki: kod incelemesinden iki küçük düzeltme (görsel eşlemesi, PNG'de yıl), sonra
+  araştırmanın kalan P1/P2 maddeleri.
