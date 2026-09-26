@@ -327,6 +327,25 @@
   }
 }
 
+/* dar telefon: iki sütunda etiket ve tutar yan yana sığmaz; etiket üstte, tutar altta */
+@media (max-width: 520px) {
+  .stack tbody tr {
+    gap: 8px 12px;
+  }
+
+  .stack td {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0;
+    text-align: left;
+  }
+
+  .stack .cellWarn {
+    flex-direction: row;
+  }
+}
+
 @media (max-width: 700px) {
   .admin {
     padding: 12px;
