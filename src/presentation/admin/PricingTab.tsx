@@ -97,7 +97,7 @@ export function PricingTab({ state, settings, onChange }: Props) {
               <th className="num">Alışım</th>
               <th>Kâr modu</th>
               <th className="num">Eczaneye satışım</th>
-              <th className="num">Bizim kâr</th>
+              <th className="num">Benim kârım</th>
               <th className="num">PSF</th>
               <th className="num">Eczacı</th>
               <th>MF</th>
@@ -136,7 +136,7 @@ export function PricingTab({ state, settings, onChange }: Props) {
                   <td className="num" data-label="Eczaneye satışım">
                     <b>{fmtMoney(v.saleMinor)}</b>
                   </td>
-                  <td className="num" data-label="Bizim kâr">
+                  <td className="num" data-label="Benim kârım">
                     {fmtMoney(ourProfit(v.saleMinor, entry.costMinor))}
                   </td>
                   <td className="num" data-label="PSF">
@@ -334,25 +334,33 @@ function PriceEditor({
   const pharmacistAmount = sale === null || psf === null ? null : math.sub(psf, sale);
   const defaultVat = effectiveVat({ ...variant, vatRate: null }, settings);
 
-  const save = async () => {
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  const fail = (message: string) => {
+    setError(message);
+    return false;
+  };
+
+  /** true = kaydedildi; false = eksik/hatalı ya da vazgeçildi (düğme yeniden açılır). */
+  const save = async (): Promise<boolean> => {
     if (source === "cost" && cost === null) {
-      return setError("Alışımdan hesaplamak için Benim Alışım fiyatını yazın.");
+      return fail("Alışımdan hesaplamak için Benim Alışım fiyatını yazın.");
     }
     if (policy === null) {
-      return setError(
+      return fail(
         source === "manual" ? "Eczaneye Satışım fiyatını yazın." : "Hesap için değeri yazın.",
       );
     }
     if (policy.kind === "margin" && policy.rate >= 1) {
-      return setError("Marj %100 ve üstü olamaz.");
+      return fail("Marj %100 ve üstü olamaz.");
     }
     if (psfMode === "fixed" && psfFixed === null) {
-      return setError("Perakende Satış Fiyatını yazın.");
+      return fail("Perakende Satış Fiyatını yazın.");
     }
     const every = mfEvery.trim() === "" ? 0 : parseQtyInput(mfEvery);
     const free = mfFree.trim() === "" ? 0 : parseQtyInput(mfFree);
-    if (every === null || free === null) return setError("MF okunamadı.");
-    if (every > 0 !== free > 0) return setError("MF için iki kutuyu da doldurun.");
+    if (every === null || free === null) return fail("MF okunamadı.");
+    if (every > 0 !== free > 0) return fail("MF için iki kutuyu da doldurun.");
     if (
       warnings.includes("sale_not_below_psf") &&
       !(await feedback.confirm({
@@ -362,7 +370,7 @@ function PriceEditor({
         confirmLabel: "Kaydet",
       }))
     ) {
-      return undefined;
+      return false;
     }
     const mfRule: MfRule | null = every > 0 ? { every, free } : null;
     const psfSetting: PsfSetting =
@@ -378,7 +386,19 @@ function PriceEditor({
         mfRule,
       },
     );
-    return undefined;
+    feedback.toast({ text: "Kayıt güncellendi.", tone: "success" });
+    return true;
+  };
+
+  /** Kaydet basılınca kilitlenir: çift dokunuş iki kayıt açmaz. */
+  const submit = async () => {
+    if (savingRef.current) return;
+    savingRef.current = true;
+    setSaving(true);
+    if (!(await save())) {
+      savingRef.current = false;
+      setSaving(false);
+    }
   };
 
   const edit =
@@ -403,8 +423,14 @@ function PriceEditor({
             <button type="button" className="btn" onClick={onClose}>
               Vazgeç
             </button>
-            <button type="button" className="btnPrimary" onClick={() => void save()}>
-              Kaydet
+            <button
+              type="button"
+              className="btnPrimary"
+              disabled={saving}
+              aria-busy={saving}
+              onClick={() => void submit()}
+            >
+              {saving ? "Kaydediliyor…" : "Kaydet"}
             </button>
           </div>
         </>
@@ -429,7 +455,7 @@ function PriceEditor({
         </div>
         <div className={ed.gains}>
           <span>
-            Bizim kâr <b className="num">{amountWithRate(ourAmount, sale)}</b>
+            Benim kârım <b className="num">{amountWithRate(ourAmount, sale)}</b>
           </span>
           <span>
             Eczacı kârı <b className="num">{amountWithRate(pharmacistAmount, sale)}</b>

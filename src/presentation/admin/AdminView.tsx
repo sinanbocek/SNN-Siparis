@@ -28,9 +28,9 @@ import styles from "./admin.module.css";
 type Tab = "reports" | "pricing" | "products" | "settings" | "data";
 
 const TABS: readonly { id: Tab; label: string; icon: typeof PackageIcon }[] = [
-  { id: "reports", label: "Raporlar", icon: ChartHistogramIcon },
-  { id: "pricing", label: "Fiyatlama", icon: Calculator01Icon },
   { id: "products", label: "Ürünler", icon: PackageIcon },
+  { id: "pricing", label: "Fiyatlama", icon: Calculator01Icon },
+  { id: "reports", label: "Raporlar", icon: ChartHistogramIcon },
   { id: "settings", label: "Ayarlar", icon: Settings02Icon },
   { id: "data", label: "Veri", icon: Task01Icon },
 ];
@@ -60,7 +60,7 @@ export interface AdminProps {
 
 /** Yönetim: ayrı dünya — turuncu bant, "Yönetim modu" etiketi (PRD §5.1). */
 export function AdminView(props: AdminProps) {
-  const [tab, setTab] = useState<Tab>("reports");
+  const [tab, setTab] = useState<Tab>("products");
   return (
     <section className={styles.admin} aria-label="Yönetim">
       <div className={styles.adminBar}>
