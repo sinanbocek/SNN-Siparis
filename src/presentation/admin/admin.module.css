@@ -25,6 +25,485 @@
   gap: 12px;
 }
 
+/* Fiyatlama: ürün satırında doğrudan giriş; gruplar akordiyon olarak açılır. */
+.pricingPage {
+  gap: 12px;
+}
+
+.pricingHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.pricingHead h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 650;
+}
+
+.pricingHead p {
+  margin: 2px 0 0;
+  color: var(--mute);
+}
+
+.pricingSearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(320px, 100%);
+  padding-left: 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--mute);
+}
+
+.pricingSearch input {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.pricingColumns {
+  display: grid;
+  grid-template-columns: 24px minmax(160px, 240px) minmax(0, 570px) minmax(205px, 1fr) 44px;
+  gap: 12px;
+  padding: 0 12px;
+  color: var(--mute);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.035em;
+}
+
+.pricingColumnFields {
+  grid-column: 3;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 180px));
+  gap: 10px;
+}
+
+.pricingColumnFields > span {
+  text-align: center;
+}
+
+.pricingColumns > span:first-child {
+  grid-column: 2;
+}
+
+.pricingColumns > span:last-child {
+  grid-column: 5;
+}
+
+.priceGroup {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.priceGroupHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 54px;
+  padding: 8px 14px;
+  border: 0;
+  background: var(--surface-muted);
+  text-align: left;
+}
+
+.priceGroupHead:hover {
+  background: var(--accent-soft);
+}
+
+.priceGroupHead b {
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.groupChevron,
+.groupChevronOpen {
+  display: inline-block;
+  color: var(--mute);
+  font-size: 23px;
+  line-height: 1;
+  transform: rotate(0);
+  transition: transform 0.15s;
+}
+
+.groupChevronOpen {
+  transform: rotate(90deg);
+}
+
+.groupMeta,
+.groupMissing {
+  color: var(--mute);
+  font-size: 13px;
+}
+
+.groupMissing {
+  margin-left: auto;
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.priceRows > .priceRow + .priceRow {
+  border-top: 1px solid var(--line);
+}
+
+.priceRow {
+  padding: 12px;
+}
+
+.priceMainRow {
+  display: grid;
+  grid-template-columns: 24px minmax(160px, 240px) minmax(0, 570px) minmax(205px, 1fr) 44px;
+  align-items: center;
+  gap: 12px;
+}
+
+.bulkSelect {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  min-height: 44px;
+}
+
+.bulkSelect input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.priceProduct {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.priceProductName {
+  width: fit-content;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.priceProductName:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.priceProduct small {
+  color: var(--mute);
+  font-size: 12px;
+}
+
+.priceProduct .priceWarning {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--warn);
+}
+
+.priceFields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 180px));
+  gap: 10px;
+}
+
+.priceField {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  max-width: 180px;
+}
+
+.priceField > span {
+  color: var(--mute);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.priceDetailsButton {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--mute);
+}
+
+.priceDetailsButton:hover,
+.priceDetailsButtonOn {
+  border-color: var(--accent-ring);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.priceGains {
+  display: grid;
+  gap: 3px;
+  justify-self: start;
+  padding: 0;
+  color: var(--mute);
+  font-size: 12px;
+}
+
+.priceGains b {
+  margin-left: 4px;
+  color: var(--good);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.rowUndo {
+  justify-self: end;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.rowStatus,
+.rowStatusError {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.rowStatus {
+  color: var(--good);
+}
+
+.rowStatusError {
+  color: var(--bad);
+}
+
+.priceRowInactive {
+  background: #fbfbfc;
+}
+
+.priceDetails {
+  display: grid;
+  grid-template-columns: 180px 290px;
+  align-items: start;
+  gap: 16px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 12px 0 0 36px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+}
+
+.detailVat,
+.detailMf {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.detailVat > span,
+.detailMf > span {
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.detailVat small,
+.detailMf small {
+  margin: 0;
+  color: var(--mute);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.detailMf > div {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.detailMf input {
+  width: 54px !important;
+  height: 38px;
+  padding: 0 5px;
+  text-align: center;
+}
+
+.pricingEmpty {
+  padding: 28px 12px;
+  color: var(--mute);
+  text-align: center;
+}
+
+.pricingTools {
+  display: grid;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.pricingTools > summary {
+  min-height: 28px;
+  color: var(--ink-2);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pricingToolHint {
+  margin: 0;
+  color: var(--mute);
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .pricingColumns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 180px));
+    gap: 8px;
+    padding: 8px 10px 0 44px;
+  }
+
+  .pricingColumns > span:first-child,
+  .pricingColumns > span:last-child {
+    display: none;
+  }
+
+  .pricingColumnFields {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 180px));
+    gap: 8px;
+    font-size: 10px;
+  }
+
+  .priceMainRow {
+    grid-template-columns: 24px minmax(0, 1fr) 44px;
+    grid-template-areas:
+      "select product details"
+      "fields fields fields"
+      "gains gains gains";
+    gap: 8px 10px;
+  }
+
+  .bulkSelect {
+    grid-area: select;
+  }
+
+  .priceProduct {
+    grid-area: product;
+  }
+
+  .priceFields {
+    grid-area: fields;
+    grid-template-columns: repeat(2, minmax(0, 180px));
+    justify-content: start;
+  }
+
+  .priceGains {
+    grid-area: gains;
+    justify-self: start;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    padding-left: 34px;
+  }
+
+  .priceDetailsButton {
+    grid-area: details;
+  }
+
+  .priceDetails {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .pricingHead {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .pricingSearch {
+    width: 100%;
+  }
+
+  .priceRow {
+    padding: 10px;
+  }
+
+  .priceFields {
+    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 180px));
+  }
+
+  .priceFields :global(.affix) {
+    min-width: 0;
+  }
+
+  .priceFields input {
+    padding: 0 22px 0 7px !important;
+    font-size: 16px !important;
+  }
+
+  .rowUndo {
+    width: 100%;
+    margin: 2px 0 0;
+    text-align: left;
+  }
+
+  .priceDetails {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    padding: 12px;
+  }
+
+  .priceGroupHead {
+    flex-wrap: wrap;
+    gap: 6px 9px;
+    padding: 8px 10px;
+  }
+
+  .groupMissing {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 390px) {
+  .priceFields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .priceField:last-child {
+    grid-column: 1 / -1;
+    max-width: 180px;
+  }
+}
+
 .narrow {
   max-width: 720px;
 }

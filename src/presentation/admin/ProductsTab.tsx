@@ -7,7 +7,7 @@ import {
   MoreVerticalIcon,
   PlusSignIcon,
 } from "@hugeicons/core-free-icons";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ImageResizer } from "../../application/ports/devices.ts";
 import type { ImageMap } from "../../application/ports/stores.ts";
 import { imageFor } from "../../application/session.ts";
@@ -26,6 +26,8 @@ interface Props {
   resizer: ImageResizer;
   onCatalogChange: (catalog: Catalog) => void;
   onImagesChange: (images: ImageMap) => Promise<string | null>;
+  editVariantId?: string | null;
+  onEditRequestHandled?: () => void;
 }
 
 function newId(prefix: string): string {
@@ -94,9 +96,20 @@ export function ProductsTab({
   resizer,
   onCatalogChange,
   onImagesChange,
+  editVariantId,
+  onEditRequestHandled,
 }: Props) {
   const feedback = useFeedback();
   const [editing, setEditing] = useState<Editing | null>(null);
+  useEffect(() => {
+    if (editVariantId == null) return;
+    const variant = catalog.variants.find((item) => item.id === editVariantId);
+    if (variant) setEditing({ kind: "variant", id: variant.id, familyId: variant.familyId });
+  }, [catalog.variants, editVariantId]);
+  const closeEditor = () => {
+    setEditing(null);
+    if (editVariantId != null) onEditRequestHandled?.();
+  };
   const families = [...catalog.families].sort((a, b) => a.order - b.order);
   const variantsOf = (familyId: string) =>
     catalog.variants.filter((v) => v.familyId === familyId).sort((a, b) => a.order - b.order);
@@ -243,7 +256,7 @@ export function ProductsTab({
           hasOwnImage={
             editingVariant !== undefined && userImages[`variant:${editingVariant.id}`] !== undefined
           }
-          onClose={() => setEditing(null)}
+          onClose={closeEditor}
           onSave={(patch) => {
             if (editingVariant === undefined) {
               onCatalogChange({
@@ -273,7 +286,7 @@ export function ProductsTab({
               patchVariant(editingVariant.id, patch);
               feedback.toast({ text: "Kayıt güncellendi.", tone: "success" });
             }
-            setEditing(null);
+            closeEditor();
           }}
           onMove={(dir) =>
             editingVariant !== undefined &&
@@ -301,7 +314,7 @@ export function ProductsTab({
               ...catalog,
               variants: catalog.variants.filter((v) => v.id !== editingVariant.id),
             });
-            setEditing(null);
+            closeEditor();
             feedback.toast({ text: "Çeşit silindi.", tone: "info" });
           }}
         />

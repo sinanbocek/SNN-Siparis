@@ -1,8 +1,9 @@
 import {
   Alert02Icon,
-  ArrowRight01Icon,
   Calculator01Icon,
   CancelCircleIcon,
+  MoreVerticalIcon,
+  Search01Icon,
 } from "@hugeicons/core-free-icons";
 import { useMemo, useRef, useState } from "react";
 import {
@@ -18,584 +19,520 @@ import {
 import { math } from "../../domain/abacus/index.ts";
 import {
   effectiveVat,
-  familyOf,
   variantLabel,
   variantPsf,
-  type Catalog,
   type MfRule,
-  type PsfSetting,
   type Variant,
 } from "../../domain/catalog/catalog.ts";
-import {
-  ourProfit,
-  saleFromPolicy,
-  type CostEntry,
-  type ProfitPolicy,
-} from "../../domain/costs/costs.ts";
+import { ourProfit, type CostEntry } from "../../domain/costs/costs.ts";
 import { parseQtyInput, qtyInput } from "../../domain/input/parse.ts";
-import { markupFromPsf, priceWarnings, psfFromSale } from "../../domain/pricing/pricing.ts";
+import { priceWarnings } from "../../domain/pricing/pricing.ts";
 import type { Settings } from "../../domain/settings/settings.ts";
 import { fmtMoney, fmtRate } from "../parts/format.ts";
 import { useFeedback } from "../parts/feedback.tsx";
-import { Icon, Modal, MoneyField, RateField } from "../parts/parts.tsx";
+import { Icon, MoneyField, RateField } from "../parts/parts.tsx";
 import styles from "./admin.module.css";
-import ed from "./priceEditor.module.css";
 import shared from "./settings.module.css";
 
 interface Props {
   state: PricingState;
   settings: Settings;
-  onChange: (state: PricingState) => void;
+  onChange: (state: PricingState) => string | null;
+  onEditProduct: (variantId: string) => void;
 }
 
-export function PricingTab({ state, settings, onChange }: Props) {
+export function PricingTab({ state, settings, onChange, onEditProduct }: Props) {
   const [selected, setSelected] = useState<readonly string[]>([]);
-  const [editing, setEditing] = useState<string | null>(null);
-  const rows = useMemo(
-    () =>
-      [...state.catalog.variants].sort((a, b) => {
-        const fa = familyOf(state.catalog, a);
-        const fb = familyOf(state.catalog, b);
-        return (fa ? fa.order : 0) - (fb ? fb.order : 0) || a.order - b.order;
-      }),
-    [state.catalog],
+  const [query, setQuery] = useState("");
+  const [openFamilies, setOpenFamilies] = useState<ReadonlySet<string>>(() => {
+    const first = [...state.catalog.families].sort((a, b) => a.order - b.order)[0];
+    return new Set(first ? [first.id] : []);
+  });
+  const [detailsId, setDetailsId] = useState<string | null>(null);
+  const [undoRows, setUndoRows] = useState<Readonly<Record<string, RowSnapshot>>>({});
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  const families = useMemo(
+    () => [...state.catalog.families].sort((a, b) => a.order - b.order),
+    [state.catalog.families],
   );
+  const groups = useMemo(
+    () =>
+      families.map((family) => ({
+        family,
+        variants: [...state.catalog.variants]
+          .filter((variant) => variant.familyId === family.id)
+          .sort((a, b) => a.order - b.order),
+      })),
+    [families, state.catalog.variants],
+  );
+  const rows = groups.flatMap((group) => group.variants);
   const step = settings.roundingStepMinor;
   const allIds = rows.map((r) => r.id);
   const target = selected.length > 0 ? selected : allIds;
   const toggle = (id: string) =>
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
-
-  const editVariant = rows.find((r) => r.id === editing);
-
-  return (
-    <div className={styles.tab}>
-      <BulkCard
-        state={state}
-        targetIds={target}
-        selectedCount={selected.length}
-        totalCount={allIds.length}
-        step={step}
-        onChange={onChange}
-        onClearSelection={() => setSelected([])}
-      />
-      <EstimateRow state={state} onChange={onChange} />
-
-      <div className={styles.tableWrap}>
-        <table className={`${styles.table} ${styles.stack}`}>
-          <thead>
-            <tr>
-              <th>
-                <input
-                  type="checkbox"
-                  aria-label="Tümünü seç"
-                  checked={selected.length === allIds.length}
-                  onChange={(e) => setSelected(e.target.checked ? allIds : [])}
-                />
-              </th>
-              <th>Ürün</th>
-              <th className="num">Alışım</th>
-              <th>Kâr modu</th>
-              <th className="num">Eczaneye satışım</th>
-              <th className="num">Benim kârım</th>
-              <th className="num">PSF</th>
-              <th className="num">Eczacı</th>
-              <th>MF</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((v) => {
-              const entry = costEntryOf(state.costs, v);
-              const psf = variantPsf(v, settings);
-              const warnings =
-                v.saleMinor !== null && psf !== null ? priceWarnings(v.saleMinor, psf) : [];
-              const markup =
-                v.saleMinor !== null && psf !== null ? markupFromPsf(v.saleMinor, psf) : null;
-              return (
-                <tr
-                  key={v.id}
-                  className={v.active ? undefined : styles.inactive}
-                  onClick={() => setEditing(v.id)}
-                >
-                  <td className={styles.cellSelect} onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="checkbox"
-                      aria-label={`${variantLabel(state.catalog, v)} seç`}
-                      checked={selected.includes(v.id)}
-                      onChange={() => toggle(v.id)}
-                    />
-                  </td>
-                  <td className={styles.cellName}>
-                    <b>{variantLabel(state.catalog, v)}</b>
-                  </td>
-                  <td className="num" data-label="Alışım">
-                    {fmtMoney(entry.costMinor)}
-                  </td>
-                  <td data-label="Kâr modu">{policyText(entry.policy)}</td>
-                  <td className="num" data-label="Eczaneye satışım">
-                    <b>{fmtMoney(v.saleMinor)}</b>
-                  </td>
-                  <td className="num" data-label="Benim kârım">
-                    {fmtMoney(ourProfit(v.saleMinor, entry.costMinor))}
-                  </td>
-                  <td className="num" data-label="PSF">
-                    {fmtMoney(psf)}
-                    {v.psf.mode === "fixed" && <small className={styles.tag}>sabit</small>}
-                  </td>
-                  <td className="num" data-label="Eczacı">
-                    {fmtRate(markup)}
-                  </td>
-                  <td data-label="MF">{v.mfRule ? `${v.mfRule.every}+${v.mfRule.free}` : "—"}</td>
-                  <td className={styles.cellWarn}>
-                    {warnings.includes("sale_not_below_psf") && (
-                      <span
-                        className={styles.bad}
-                        title="Eczaneye satışım perakende satış fiyatına eşit ya da yüksek"
-                      >
-                        <Icon icon={CancelCircleIcon} size={18} />
-                      </span>
-                    )}
-                    {warnings.includes("low_pharmacist_margin") && (
-                      <span className={styles.warn} title="Eczacı marjı %10'un altında">
-                        <Icon icon={Alert02Icon} size={18} />
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {editVariant && (
-        <PriceEditor
-          key={editVariant.id}
-          catalog={state.catalog}
-          variant={editVariant}
-          entry={costEntryOf(state.costs, editVariant)}
-          settings={settings}
-          onClose={() => setEditing(null)}
-          onSave={(entry, patch) => {
-            const priced = applyCostEntry(state, entry, step);
-            onChange({
-              ...priced,
-              catalog: {
-                ...priced.catalog,
-                variants: priced.catalog.variants.map((x) =>
-                  x.id === editVariant.id ? { ...x, ...patch } : x,
-                ),
-              },
-            });
-            setEditing(null);
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-function policyText(policy: ProfitPolicy): string {
-  switch (policy.kind) {
-    case "markup":
-      return `Alış +${fmtRate(policy.rate)}`;
-    case "margin":
-      return `${fmtRate(policy.rate)} marj`;
-    case "fixed_price":
-      return "Sabit";
-    case "target_profit":
-      return `Alış +${fmtMoney(policy.profitMinor)}`;
-  }
-}
-
-type VariantPatch = Pick<Variant, "psf" | "pharmacistMarkup" | "vatRate" | "mfRule">;
-
-type SaleSource = "manual" | "cost";
-type CostMethod = "markup" | "margin" | "target_profit";
-type PsfMode = PsfSetting["mode"];
-
-const COST_METHODS: readonly (readonly [CostMethod, string])[] = [
-  ["markup", "% ekle"],
-  ["margin", "% marj"],
-  ["target_profit", "TL ekle"],
-];
-
-const METHOD_FIELD: Record<CostMethod, string> = {
-  markup: "Alışıma eklenecek oran",
-  margin: "Marj (satış içindeki payım)",
-  target_profit: "Alışıma eklenecek tutar",
-};
-
-function Choice<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: T;
-  options: readonly (readonly [T, string])[];
-  onChange: (value: T) => void;
-}) {
-  return (
-    <div className={shared.segmented} role="radiogroup" aria-label={label}>
-      {options.map(([id, text]) => (
-        <button
-          key={id}
-          type="button"
-          role="radio"
-          aria-checked={value === id}
-          onClick={() => onChange(id)}
-        >
-          {text}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-/** Tutar ve oran: "₺1.280,00 · %40". Oran hesaplanamazsa yalnız tutar. */
-function amountWithRate(amount: number | null, base: number | null): string {
-  if (amount === null) return fmtMoney(null);
-  const rate = base === null || base <= 0 ? null : math.div(amount, base);
-  return rate === null ? fmtMoney(amount) : `${fmtMoney(amount)} · ${fmtRate(rate, 0)}`;
-}
-
-/**
- * Ürün fiyat penceresi (proje sahibi 26.09.2026, taslak onaylı): üstte hep görünen fiyat
- * zinciri; Eczaneye Satışım ve Perakende Satış Fiyatı için iki basit soru; MF tek cümle;
- * KDV kapalı; Vazgeç / Kaydet altta sabit.
- */
-function PriceEditor({
-  catalog,
-  variant,
-  entry,
-  settings,
-  onClose,
-  onSave,
-}: {
-  catalog: Catalog;
-  variant: Variant;
-  entry: CostEntry;
-  settings: Settings;
-  onClose: () => void;
-  onSave: (entry: CostEntry, patch: VariantPatch) => void;
-}) {
-  const initial = entry.policy;
-  const [cost, setCost] = useState(entry.costMinor);
-  const [source, setSource] = useState<SaleSource>(
-    initial.kind === "fixed_price" ? "manual" : "cost",
-  );
-  const [method, setMethod] = useState<CostMethod>(
-    initial.kind === "fixed_price" ? "margin" : initial.kind,
-  );
-  const [rate, setRate] = useState<number | null>(
-    initial.kind === "markup" || initial.kind === "margin" ? initial.rate : null,
-  );
-  const [profit, setProfit] = useState<number | null>(
-    initial.kind === "target_profit" ? initial.profitMinor : null,
-  );
-  const [manualSale, setManualSale] = useState<number | null>(
-    initial.kind === "fixed_price" ? initial.priceMinor : variant.saleMinor,
-  );
-  const [psfMode, setPsfMode] = useState<PsfMode>(variant.psf.mode);
-  const [psfFixed, setPsfFixed] = useState<number | null>(
-    variant.psf.mode === "fixed" ? variant.psf.priceMinor : null,
-  );
-  const [markup, setMarkup] = useState(variant.pharmacistMarkup);
-  const [vat, setVat] = useState(variant.vatRate);
-  const [mfEvery, setMfEvery] = useState(variant.mfRule ? String(variant.mfRule.every) : "");
-  const [mfFree, setMfFree] = useState(variant.mfRule ? String(variant.mfRule.free) : "");
-  const [error, setError] = useState<string | null>(null);
-  const feedback = useFeedback();
-
-  const policy: ProfitPolicy | null = (() => {
-    if (source === "manual") {
-      return manualSale === null ? null : { kind: "fixed_price", priceMinor: manualSale };
-    }
-    if (method === "target_profit") {
-      return profit === null ? null : { kind: "target_profit", profitMinor: profit };
-    }
-    if (rate === null) return null;
-    return method === "markup" ? { kind: "markup", rate } : { kind: "margin", rate };
-  })();
-  const step = settings.roundingStepMinor;
-  const sale = policy === null ? null : saleFromPolicy(cost, policy, step);
-  const defaultMarkup = settings.defaultPharmacistMarkup;
-  const psf =
-    psfMode === "fixed"
-      ? psfFixed
-      : sale === null
-        ? null
-        : psfFromSale(sale, markup ?? defaultMarkup, step);
-  const warnings = sale !== null && psf !== null ? priceWarnings(sale, psf) : [];
-  const ourAmount = ourProfit(sale, cost);
-  const pharmacistAmount = sale === null || psf === null ? null : math.sub(psf, sale);
-  const defaultVat = effectiveVat({ ...variant, vatRate: null }, settings);
-
-  const [saving, setSaving] = useState(false);
-  const savingRef = useRef(false);
-  const fail = (message: string) => {
-    setError(message);
-    return false;
+  const saveRow = (variantId: string, entry: CostEntry, patch: Partial<Variant>): string | null => {
+    const current = stateRef.current;
+    const variant = current.catalog.variants.find((item) => item.id === variantId);
+    if (!variant) return "Ürün bulunamadı; kayıt yapılamadı.";
+    setUndoRows((previous) =>
+      previous[variantId]
+        ? previous
+        : { ...previous, [variantId]: { entry: costEntryOf(current.costs, variant), variant } },
+    );
+    const priced = applyCostEntry(current, entry, step);
+    const next: PricingState = {
+      ...priced,
+      catalog: {
+        ...priced.catalog,
+        variants: priced.catalog.variants.map((item) =>
+          item.id === variantId ? { ...item, ...patch } : item,
+        ),
+      },
+    };
+    stateRef.current = next;
+    return onChange(next);
   };
-
-  /** true = kaydedildi; false = eksik/hatalı ya da vazgeçildi (düğme yeniden açılır). */
-  const save = async (): Promise<boolean> => {
-    if (source === "cost" && cost === null) {
-      return fail("Alışımdan hesaplamak için Benim Alışım fiyatını yazın.");
-    }
-    if (policy === null) {
-      return fail(
-        source === "manual" ? "Eczaneye Satışım fiyatını yazın." : "Hesap için değeri yazın.",
+  const undoRow = (variantId: string): string | null => {
+    const snapshot = undoRows[variantId];
+    if (!snapshot) return "Geri alınacak değişiklik bulunamadı.";
+    const current = stateRef.current;
+    const restored = applyCostEntry(current, snapshot.entry, step);
+    const next: PricingState = {
+      ...restored,
+      catalog: {
+        ...restored.catalog,
+        variants: restored.catalog.variants.map((item) =>
+          item.id === variantId ? snapshot.variant : item,
+        ),
+      },
+    };
+    stateRef.current = next;
+    const error = onChange(next);
+    if (error === null) {
+      setUndoRows((previous) =>
+        Object.fromEntries(Object.entries(previous).filter(([id]) => id !== variantId)),
       );
     }
-    if (policy.kind === "margin" && policy.rate >= 1) {
-      return fail("Marj %100 ve üstü olamaz.");
-    }
-    if (psfMode === "fixed" && psfFixed === null) {
-      return fail("Perakende Satış Fiyatını yazın.");
-    }
-    const every = mfEvery.trim() === "" ? 0 : parseQtyInput(mfEvery);
-    const free = mfFree.trim() === "" ? 0 : parseQtyInput(mfFree);
-    if (every === null || free === null) return fail("MF okunamadı.");
-    if (every > 0 !== free > 0) return fail("MF için iki kutuyu da doldurun.");
-    if (
-      warnings.includes("sale_not_below_psf") &&
-      !(await feedback.confirm({
-        title: "Yine kaydedilsin mi?",
-        message:
-          "Eczaneye Satışım, Perakende Satış Fiyatına eşit ya da yüksek; eczacı bu üründen kâr etmez.",
-        confirmLabel: "Kaydet",
-      }))
-    ) {
-      return false;
-    }
-    const mfRule: MfRule | null = every > 0 ? { every, free } : null;
-    const psfSetting: PsfSetting =
-      psfMode === "fixed" && psfFixed !== null
-        ? { mode: "fixed", priceMinor: psfFixed }
-        : { mode: "computed" };
-    onSave(
-      { variantId: variant.id, costMinor: cost, policy },
-      {
-        psf: psfSetting,
-        pharmacistMarkup: psfMode === "fixed" ? variant.pharmacistMarkup : markup,
-        vatRate: vat,
-        mfRule,
-      },
-    );
-    feedback.toast({ text: "Kayıt güncellendi.", tone: "success" });
-    return true;
+    return error;
   };
-
-  /** Kaydet basılınca kilitlenir: çift dokunuş iki kayıt açmaz. */
-  const submit = async () => {
-    if (savingRef.current) return;
-    savingRef.current = true;
-    setSaving(true);
-    if (!(await save())) {
-      savingRef.current = false;
-      setSaving(false);
-    }
+  const applyOtherChange = (next: PricingState) => {
+    setUndoRows({});
+    stateRef.current = next;
+    onChange(next);
   };
-
-  const edit =
-    <T,>(set: (value: T) => void) =>
-    (value: T) => {
-      set(value);
-      setError(null);
-    };
+  const needle = query.trim().toLocaleLowerCase("tr-TR");
 
   return (
-    <Modal
-      title={variantLabel(catalog, variant)}
-      onClose={onClose}
-      footer={
-        <>
-          {error !== null && (
-            <p className={ed.error} role="alert">
-              {error}
-            </p>
-          )}
-          <div className={ed.footButtons}>
-            <button type="button" className="btn" onClick={onClose}>
-              Vazgeç
-            </button>
+    <div className={`${styles.tab} ${styles.pricingPage}`}>
+      <header className={styles.pricingHead}>
+        <div>
+          <h2>Fiyatlama</h2>
+          <p>Üç fiyatı girin; iki tarafın kutu başı kazancı otomatik hesaplansın.</p>
+        </div>
+        <label className={styles.pricingSearch}>
+          <Icon icon={Search01Icon} size={18} />
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => {
+              const nextQuery = event.target.value;
+              setQuery(nextQuery);
+              const nextNeedle = nextQuery.trim().toLocaleLowerCase("tr-TR");
+              if (nextNeedle !== "") {
+                setOpenFamilies(
+                  new Set(
+                    groups
+                      .filter(({ family, variants }) =>
+                        variants.some((variant) =>
+                          `${family.name} ${variant.name} ${variant.unit}`
+                            .toLocaleLowerCase("tr-TR")
+                            .includes(nextNeedle),
+                        ),
+                      )
+                      .map(({ family }) => family.id),
+                  ),
+                );
+              }
+            }}
+            placeholder="Ürün ara"
+            aria-label="Fiyatlamada ürün ara"
+          />
+        </label>
+      </header>
+
+      {groups.map(({ family, variants }) => {
+        const matches = variants.filter((variant) =>
+          `${family.name} ${variant.name} ${variant.unit}`
+            .toLocaleLowerCase("tr-TR")
+            .includes(needle),
+        );
+        if (matches.length === 0) return null;
+        const isOpen = openFamilies.has(family.id);
+        const incomplete = variants.filter(
+          (variant) =>
+            costEntryOf(state.costs, variant).costMinor === null ||
+            variant.saleMinor === null ||
+            variantPsf(variant, settings) === null,
+        ).length;
+        return (
+          <section className={styles.priceGroup} key={family.id}>
             <button
               type="button"
-              className="btnPrimary"
-              disabled={saving}
-              aria-busy={saving}
-              onClick={() => void submit()}
+              className={styles.priceGroupHead}
+              aria-expanded={isOpen}
+              onClick={() =>
+                setOpenFamilies((previous) => {
+                  const next = new Set(previous);
+                  if (next.has(family.id)) next.delete(family.id);
+                  else next.add(family.id);
+                  return next;
+                })
+              }
             >
-              {saving ? "Kaydediliyor…" : "Kaydet"}
-            </button>
-          </div>
-        </>
-      }
-    >
-      <div className={ed.chain} aria-live="polite" aria-label="Fiyat özeti">
-        <div className={ed.steps}>
-          <span>
-            <small>Benim Alışım</small>
-            <b className="num">{fmtMoney(cost)}</b>
-          </span>
-          <Icon icon={ArrowRight01Icon} size={16} />
-          <span>
-            <small>Eczaneye Satışım</small>
-            <b className="num">{fmtMoney(sale)}</b>
-          </span>
-          <Icon icon={ArrowRight01Icon} size={16} />
-          <span>
-            <small>Perakende Satış</small>
-            <b className="num">{fmtMoney(psf)}</b>
-          </span>
-        </div>
-        <div className={ed.gains}>
-          <span>
-            Benim kârım <b className="num">{amountWithRate(ourAmount, sale)}</b>
-          </span>
-          <span>
-            Eczacı kârı <b className="num">{amountWithRate(pharmacistAmount, sale)}</b>
-          </span>
-        </div>
-        {warnings.includes("sale_not_below_psf") && (
-          <p className={ed.bad}>Eczaneye Satışım, Perakende Satış Fiyatından düşük değil.</p>
-        )}
-        {warnings.includes("low_pharmacist_margin") && (
-          <p className={ed.warn}>Eczacı kârı %10&apos;un altında.</p>
-        )}
-      </div>
-
-      <section className={ed.section} aria-labelledby="editor-sale">
-        <h3 id="editor-sale">Eczaneye Satışım</h3>
-        <Choice
-          label="Eczaneye Satışım nasıl belirlensin"
-          value={source}
-          options={[
-            ["manual", "Elle yazarım"],
-            ["cost", "Alışımdan hesapla"],
-          ]}
-          onChange={edit(setSource)}
-        />
-        <label className={ed.field}>
-          <span>
-            Benim Alışım (KDV hariç)
-            {source === "manual" && <small> · raporlarda kâr için</small>}
-          </span>
-          <MoneyField label="Benim Alışım" value={cost} onCommit={edit(setCost)} />
-        </label>
-        {source === "manual" ? (
-          <label className={ed.field}>
-            <span>Eczaneye Satışım (KDV hariç)</span>
-            <MoneyField
-              label="Eczaneye Satışım"
-              value={manualSale}
-              onCommit={edit(setManualSale)}
-            />
-          </label>
-        ) : (
-          <>
-            <Choice
-              label="Hesap yöntemi"
-              value={method}
-              options={COST_METHODS}
-              onChange={edit(setMethod)}
-            />
-            <label className={ed.field}>
-              <span>{METHOD_FIELD[method]}</span>
-              {method === "target_profit" ? (
-                <MoneyField
-                  key="profit"
-                  label={METHOD_FIELD[method]}
-                  value={profit}
-                  onCommit={edit(setProfit)}
-                />
-              ) : (
-                <RateField
-                  key={method}
-                  label={METHOD_FIELD[method]}
-                  value={rate}
-                  onCommit={edit(setRate)}
-                />
+              <span
+                className={isOpen ? styles.groupChevronOpen : styles.groupChevron}
+                aria-hidden="true"
+              >
+                ›
+              </span>
+              <b>{family.name}</b>
+              <span className={styles.groupMeta}>{variants.length} ürün</span>
+              {incomplete > 0 && (
+                <span className={styles.groupMissing}>{incomplete} fiyat eksik</span>
               )}
-            </label>
-          </>
-        )}
-      </section>
+            </button>
+            {isOpen && (
+              <>
+                <div className={styles.pricingColumns} aria-hidden="true">
+                  <span>Ürün</span>
+                  <div className={styles.pricingColumnFields}>
+                    <span>Benim alışım</span>
+                    <span>Eczaneye satışım</span>
+                    <span>Perakende satışı</span>
+                  </div>
+                  <span />
+                </div>
+                <div className={styles.priceRows}>
+                  {matches.map((variant) => (
+                    <PriceRow
+                      key={variant.id}
+                      variant={variant}
+                      familyLabel={family.name}
+                      state={state}
+                      settings={settings}
+                      selected={selected.includes(variant.id)}
+                      undo={undoRows[variant.id] !== undefined}
+                      detailsOpen={detailsId === variant.id}
+                      onToggleSelect={() => toggle(variant.id)}
+                      onEditProduct={() => onEditProduct(variant.id)}
+                      onToggleDetails={() =>
+                        setDetailsId((id) => (id === variant.id ? null : variant.id))
+                      }
+                      onUndo={() => undoRow(variant.id)}
+                      onCommit={(entry, patch) => saveRow(variant.id, entry, patch)}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </section>
+        );
+      })}
 
-      <section className={ed.section} aria-labelledby="editor-psf">
-        <h3 id="editor-psf">Perakende Satış Fiyatı</h3>
-        <Choice
-          label="Perakende Satış Fiyatı nasıl belirlensin"
-          value={psfMode}
-          options={[
-            ["computed", "Eczacı oranından"],
-            ["fixed", "Elle yazarım"],
-          ]}
-          onChange={edit(setPsfMode)}
+      {groups.every(({ family, variants }) =>
+        variants.every(
+          (variant) =>
+            !`${family.name} ${variant.name} ${variant.unit}`
+              .toLocaleLowerCase("tr-TR")
+              .includes(needle),
+        ),
+      ) && <p className={styles.pricingEmpty}>Aramanızla eşleşen ürün bulunamadı.</p>}
+
+      <details className={styles.pricingTools}>
+        <summary>Toplu işlemler ve alış tahmini</summary>
+        {selected.length > 0 && (
+          <p className={styles.pricingToolHint}>
+            {selected.length} ürün seçildi. Seçim yoksa tüm ürünler hedeflenir.
+          </p>
+        )}
+        <BulkCard
+          state={state}
+          targetIds={target}
+          selectedCount={selected.length}
+          totalCount={allIds.length}
+          step={step}
+          onChange={applyOtherChange}
+          onClearSelection={() => setSelected([])}
         />
-        {psfMode === "fixed" ? (
-          <label className={ed.field}>
-            <span>Perakende Satış Fiyatı</span>
-            <MoneyField
-              label="Perakende Satış Fiyatı"
-              value={psfFixed}
-              onCommit={edit(setPsfFixed)}
-            />
-          </label>
-        ) : (
-          <label className={ed.field}>
-            <span>Eczacı oranı</span>
-            <RateField
-              label="Eczacı oranı"
-              value={markup}
-              onCommit={edit(setMarkup)}
-              placeholder={`${fmtRate(defaultMarkup, 0).replace("%", "")} (varsayılan)`}
-            />
-          </label>
-        )}
-      </section>
+        <EstimateRow state={state} onChange={applyOtherChange} />
+      </details>
+    </div>
+  );
+}
 
-      <section className={ed.section} aria-labelledby="editor-mf">
-        <h3 id="editor-mf">Mal fazlası (MF)</h3>
-        <div className={ed.mf}>
+interface RowSnapshot {
+  entry: CostEntry;
+  variant: Variant;
+}
+
+function PriceRow({
+  variant,
+  familyLabel,
+  state,
+  settings,
+  selected,
+  undo,
+  detailsOpen,
+  onToggleSelect,
+  onEditProduct,
+  onToggleDetails,
+  onUndo,
+  onCommit,
+}: {
+  variant: Variant;
+  familyLabel: string;
+  state: PricingState;
+  settings: Settings;
+  selected: boolean;
+  undo: boolean;
+  detailsOpen: boolean;
+  onToggleSelect: () => void;
+  onEditProduct: () => void;
+  onToggleDetails: () => void;
+  onUndo: () => string | null;
+  onCommit: (entry: CostEntry, patch: Partial<Variant>) => string | null;
+}) {
+  const [rowStatus, setRowStatus] = useState<string | null>(null);
+  const entry = costEntryOf(state.costs, variant);
+  const psf = variantPsf(variant, settings);
+  const ownProfitMinor = ourProfit(variant.saleMinor, entry.costMinor);
+  const pharmacyProfitMinor =
+    variant.saleMinor === null || psf === null ? null : math.sub(psf, variant.saleMinor);
+  const ownMargin =
+    ownProfitMinor === null || variant.saleMinor === null || variant.saleMinor <= 0
+      ? null
+      : math.div(ownProfitMinor, variant.saleMinor);
+  const pharmacyMargin =
+    pharmacyProfitMinor === null || psf === null || psf <= 0
+      ? null
+      : math.div(pharmacyProfitMinor, psf);
+  const warnings =
+    variant.saleMinor !== null && psf !== null ? priceWarnings(variant.saleMinor, psf) : [];
+  const saleEntry = (saleMinor: number | null): CostEntry => ({
+    ...entry,
+    policy: saleMinor === null ? entry.policy : { kind: "fixed_price", priceMinor: saleMinor },
+  });
+  const saveCost = (costMinor: number | null) => {
+    if (costMinor === entry.costMinor) return;
+    const policy =
+      variant.saleMinor === null
+        ? entry.policy
+        : { kind: "fixed_price" as const, priceMinor: variant.saleMinor };
+    setRowStatus(onCommit({ ...entry, costMinor, policy }, {}) ?? "Kaydedildi");
+  };
+  const saveSale = (saleMinor: number | null) => {
+    if (saleMinor === variant.saleMinor) return;
+    setRowStatus(
+      onCommit(saleEntry(saleMinor), {
+        saleMinor,
+        ...(psf === null ? {} : { psf: { mode: "fixed" as const, priceMinor: psf } }),
+      }) ?? "Kaydedildi",
+    );
+  };
+  const saveRetail = (priceMinor: number | null) => {
+    const next =
+      priceMinor === null ? { mode: "computed" as const } : { mode: "fixed" as const, priceMinor };
+    const unchanged =
+      variant.psf.mode === "computed"
+        ? next.mode === "computed"
+        : next.mode === "fixed" && variant.psf.priceMinor === next.priceMinor;
+    if (unchanged) return;
+    setRowStatus(onCommit(entry, { psf: next }) ?? "Kaydedildi");
+  };
+  const commitDetails = (nextEntry: CostEntry, patch: Partial<Variant>) => {
+    const error = onCommit(nextEntry, patch);
+    setRowStatus(error ?? "Kaydedildi");
+    return error;
+  };
+
+  return (
+    <article className={`${styles.priceRow} ${variant.active ? "" : styles.priceRowInactive}`}>
+      <div className={styles.priceMainRow}>
+        <label className={styles.bulkSelect} title="Toplu işlem için seç">
+          <input
+            type="checkbox"
+            aria-label={`${familyLabel} ${variant.name} toplu işlem için seç`}
+            checked={selected}
+            onChange={onToggleSelect}
+          />
+        </label>
+        <div className={styles.priceProduct}>
+          <button type="button" className={styles.priceProductName} onClick={onEditProduct}>
+            {variantLabel(state.catalog, variant)}
+          </button>
+          {!variant.active && <small>Satış kataloğunda gizli</small>}
+          {warnings.includes("sale_not_below_psf") && (
+            <small className={styles.priceWarning}>
+              <Icon icon={CancelCircleIcon} size={14} /> Eczane kazancı yok
+            </small>
+          )}
+          {warnings.includes("low_pharmacist_margin") && (
+            <small className={styles.priceWarning}>
+              <Icon icon={Alert02Icon} size={14} /> Eczane kazancı düşük
+            </small>
+          )}
+        </div>
+        <div className={styles.priceFields}>
+          <label className={styles.priceField}>
+            <MoneyField
+              label={`${variantLabel(state.catalog, variant)} benim alışım`}
+              value={entry.costMinor}
+              onCommit={saveCost}
+            />
+          </label>
+          <label className={styles.priceField}>
+            <MoneyField
+              label={`${variantLabel(state.catalog, variant)} eczaneye satışım`}
+              value={variant.saleMinor}
+              onCommit={saveSale}
+            />
+          </label>
+          <label className={styles.priceField}>
+            <MoneyField
+              label={`${variantLabel(state.catalog, variant)} perakende satışı`}
+              value={psf}
+              onCommit={saveRetail}
+            />
+          </label>
+        </div>
+        <div className={styles.priceGains} aria-live="polite">
+          <span>
+            Benim kazancım <b className="num">{fmtMoney(ownProfitMinor)}</b>{" "}
+            <span>({fmtRate(ownMargin)})</span>
+          </span>
+          <span>
+            Eczanenin kazancı <b className="num">{fmtMoney(pharmacyProfitMinor)}</b>{" "}
+            <span>({fmtRate(pharmacyMargin)})</span>
+          </span>
+          {rowStatus && (
+            <span
+              className={
+                rowStatus === "Kaydedildi" || rowStatus === "Geri alındı"
+                  ? styles.rowStatus
+                  : styles.rowStatusError
+              }
+              role="status"
+            >
+              {rowStatus}
+            </span>
+          )}
+          {undo && (
+            <button
+              type="button"
+              className={styles.rowUndo}
+              onClick={() => setRowStatus(onUndo() ?? "Geri alındı")}
+            >
+              Geri al
+            </button>
+          )}
+        </div>
+        <button
+          type="button"
+          className={`${styles.priceDetailsButton} ${detailsOpen ? styles.priceDetailsButtonOn : ""}`}
+          aria-expanded={detailsOpen}
+          aria-label={`${variantLabel(state.catalog, variant)} ayrıntıları`}
+          onClick={onToggleDetails}
+        >
+          <Icon icon={MoreVerticalIcon} size={18} />
+        </button>
+      </div>
+      {detailsOpen && (
+        <ProductDetails
+          key={variant.id}
+          variant={variant}
+          settings={settings}
+          entry={entry}
+          onCommit={commitDetails}
+        />
+      )}
+    </article>
+  );
+}
+
+function ProductDetails({
+  variant,
+  settings,
+  entry,
+  onCommit,
+}: {
+  variant: Variant;
+  settings: Settings;
+  entry: CostEntry;
+  onCommit: (entry: CostEntry, patch: Partial<Variant>) => string | null;
+}) {
+  const [every, setEvery] = useState(variant.mfRule ? String(variant.mfRule.every) : "");
+  const [free, setFree] = useState(variant.mfRule ? String(variant.mfRule.free) : "");
+  const [mfHint, setMfHint] = useState("");
+  const defaultVat = effectiveVat({ ...variant, vatRate: null }, settings);
+  const commitMf = () => {
+    const parsedEvery = every.trim() === "" ? 0 : parseQtyInput(every);
+    const parsedFree = free.trim() === "" ? 0 : parseQtyInput(free);
+    if (parsedEvery === null || parsedFree === null) {
+      setMfHint("Adetleri kontrol edin.");
+      return;
+    }
+    if (parsedEvery > 0 !== parsedFree > 0) {
+      setMfHint("Mal fazlası için iki alanı da doldurun.");
+      return;
+    }
+    const mfRule: MfRule | null = parsedEvery > 0 ? { every: parsedEvery, free: parsedFree } : null;
+    setMfHint("");
+    if (JSON.stringify(mfRule) !== JSON.stringify(variant.mfRule)) onCommit(entry, { mfRule });
+  };
+  return (
+    <div className={styles.priceDetails}>
+      <label className={styles.detailVat}>
+        <span>Ürüne özel KDV</span>
+        <RateField
+          label={`${variant.name} ürüne özel KDV`}
+          value={variant.vatRate}
+          placeholder={`${fmtRate(defaultVat, 0).replace("%", "")} · varsayılan`}
+          onCommit={(vatRate) => {
+            if (vatRate !== variant.vatRate) onCommit(entry, { vatRate });
+          }}
+        />
+        <small>
+          {variant.vatRate === null
+            ? "Genel KDV varsayılanı kullanılıyor. Fiyatlar KDV hariçtir."
+            : "Bu ürün için özel oran kullanılıyor. Fiyatlar KDV hariçtir."}
+        </small>
+      </label>
+      <div className={styles.detailMf}>
+        <span>Mal fazlası</span>
+        <div>
           <span>Her</span>
           <input
-            aria-label="Her kaç kutuya"
+            aria-label={`${variant.name} her kaç kutuya`}
             inputMode="numeric"
-            value={mfEvery}
-            onChange={(e) => edit(setMfEvery)(qtyInput(e.target.value))}
+            value={every}
+            onChange={(event) => setEvery(qtyInput(event.target.value))}
+            onBlur={commitMf}
           />
           <span>kutuya</span>
           <input
-            aria-label="Kaç kutu bedava"
+            aria-label={`${variant.name} kaç kutu bedava`}
             inputMode="numeric"
-            value={mfFree}
-            onChange={(e) => edit(setMfFree)(qtyInput(e.target.value))}
+            value={free}
+            onChange={(event) => setFree(qtyInput(event.target.value))}
+            onBlur={commitMf}
           />
           <span>kutu bedava</span>
-          <small>(katlanarak; boşsa MF yok)</small>
         </div>
-        <details className={ed.more} open={vat !== null}>
-          <summary>
-            Ürüne özel KDV (şu an {fmtRate(vat ?? defaultVat, 0)}
-            {vat === null ? ", varsayılan" : ""})
-          </summary>
-          <label className={ed.field}>
-            <span>KDV oranı</span>
-            <RateField
-              label="Ürüne özel KDV"
-              value={vat}
-              onCommit={edit(setVat)}
-              placeholder={`${fmtRate(defaultVat, 0).replace("%", "")} (varsayılan)`}
-            />
-          </label>
-        </details>
-      </section>
-    </Modal>
+        {mfHint && <small role="status">{mfHint}</small>}
+      </div>
+    </div>
   );
 }
 
