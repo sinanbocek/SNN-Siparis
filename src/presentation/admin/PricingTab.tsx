@@ -16,7 +16,7 @@ import {
   type BulkPreview,
   type PricingState,
 } from "../../application/admin/pricing.ts";
-import { math } from "../../domain/abacus/index.ts";
+import { math, text } from "../../domain/abacus/index.ts";
 import {
   effectiveVat,
   variantLabel,
@@ -122,7 +122,7 @@ export function PricingTab({ state, settings, onChange, onEditProduct }: Props) 
     stateRef.current = next;
     onChange(next);
   };
-  const needle = query.trim().toLocaleLowerCase("tr-TR");
+  const needle = text.searchKey(query.trim());
 
   return (
     <div className={`${styles.tab} ${styles.pricingPage}`}>
@@ -139,15 +139,15 @@ export function PricingTab({ state, settings, onChange, onEditProduct }: Props) 
             onChange={(event) => {
               const nextQuery = event.target.value;
               setQuery(nextQuery);
-              const nextNeedle = nextQuery.trim().toLocaleLowerCase("tr-TR");
+              const nextNeedle = text.searchKey(nextQuery.trim());
               if (nextNeedle !== "") {
                 setOpenFamilies(
                   new Set(
                     groups
                       .filter(({ family, variants }) =>
                         variants.some((variant) =>
-                          `${family.name} ${variant.name} ${variant.unit}`
-                            .toLocaleLowerCase("tr-TR")
+                          text
+                            .searchKey(`${family.name} ${variant.name} ${variant.unit}`)
                             .includes(nextNeedle),
                         ),
                       )
@@ -164,9 +164,7 @@ export function PricingTab({ state, settings, onChange, onEditProduct }: Props) 
 
       {groups.map(({ family, variants }) => {
         const matches = variants.filter((variant) =>
-          `${family.name} ${variant.name} ${variant.unit}`
-            .toLocaleLowerCase("tr-TR")
-            .includes(needle),
+          text.searchKey(`${family.name} ${variant.name} ${variant.unit}`).includes(needle),
         );
         if (matches.length === 0) return null;
         const isOpen = openFamilies.has(family.id);
@@ -244,9 +242,7 @@ export function PricingTab({ state, settings, onChange, onEditProduct }: Props) 
       {groups.every(({ family, variants }) =>
         variants.every(
           (variant) =>
-            !`${family.name} ${variant.name} ${variant.unit}`
-              .toLocaleLowerCase("tr-TR")
-              .includes(needle),
+            !text.searchKey(`${family.name} ${variant.name} ${variant.unit}`).includes(needle),
         ),
       ) && <p className={styles.pricingEmpty}>Aramanızla eşleşen ürün bulunamadı.</p>}
 
