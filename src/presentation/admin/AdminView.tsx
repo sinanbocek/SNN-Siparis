@@ -46,7 +46,7 @@ export interface AdminProps {
   lastBackupAt: string | null;
   nowIso: string;
   usageBytes: number | null;
-  onPricingChange: (state: PricingState) => void;
+  onPricingChange: (state: PricingState) => string | null;
   onCatalogChange: (catalog: Catalog) => void;
   onSettingsChange: (settings: Settings) => string | null;
   onPriceSettingsSave: (settings: Settings, catalog: Catalog) => string | null;
@@ -61,6 +61,7 @@ export interface AdminProps {
 /** Yönetim: ayrı dünya — turuncu bant, "Yönetim modu" etiketi (PRD §5.1). */
 export function AdminView(props: AdminProps) {
   const [tab, setTab] = useState<Tab>("products");
+  const [editVariantId, setEditVariantId] = useState<string | null>(null);
   return (
     <section className={styles.admin} aria-label="Yönetim">
       <div className={styles.adminBar}>
@@ -92,6 +93,10 @@ export function AdminView(props: AdminProps) {
           state={props.pricing}
           settings={props.settings}
           onChange={props.onPricingChange}
+          onEditProduct={(id) => {
+            setEditVariantId(id);
+            setTab("products");
+          }}
         />
       )}
       {tab === "products" && (
@@ -102,6 +107,11 @@ export function AdminView(props: AdminProps) {
           resizer={props.resizer}
           onCatalogChange={props.onCatalogChange}
           onImagesChange={props.onImagesChange}
+          editVariantId={editVariantId}
+          onEditRequestHandled={() => {
+            setEditVariantId(null);
+            setTab("pricing");
+          }}
         />
       )}
       {tab === "settings" && (

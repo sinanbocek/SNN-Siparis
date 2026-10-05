@@ -21,7 +21,7 @@ export interface AdminBase {
   resizer: ImageResizer;
   today: string;
   now: () => string;
-  onCatalogChange: (catalog: Catalog) => void;
+  onCatalogChange: (catalog: Catalog) => string | null;
   /** Metin ayarları (otomatik kayıt); hata mesajı ya da null döner. */
   onSettingsChange: (settings: Settings) => string | null;
   /** Fiyat ayarları + yeniden türetilen katalog, ya hep ya hiç; hata mesajı ya da null. */
@@ -107,16 +107,18 @@ export default function AdminGate({ costStore, base }: AdminGateProps) {
     );
   }
 
-  const saveCosts = (next: CostBook) => {
+  const saveCosts = (next: CostBook): string | null => {
     setCosts(next);
     const result = costStore.save(next);
     setCostError(result.ok ? null : "Alış fiyatları kaydedilemedi.");
+    return result.ok ? null : "Alış fiyatları kaydedilemedi.";
   };
 
   const pricing: PricingState = { catalog: base.catalog, costs };
-  const applyPricing = (next: PricingState) => {
-    if (next.catalog !== base.catalog) base.onCatalogChange(next.catalog);
-    if (next.costs !== costs) saveCosts(next.costs);
+  const applyPricing = (next: PricingState): string | null => {
+    const catalogError = next.catalog !== base.catalog ? base.onCatalogChange(next.catalog) : null;
+    const costError = next.costs !== costs ? saveCosts(next.costs) : null;
+    return catalogError ?? costError;
   };
 
   const lastBackup = base.meta.lastBackupAt;

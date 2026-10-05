@@ -523,7 +523,12 @@ function AppShell({ stores, seed, share, png, resizer, updates, now, admin }: Ap
                 now,
                 onCatalogChange: (next) => {
                   setCatalog(next);
-                  persist(stores.catalog, next);
+                  const error = persist(stores.catalog, next);
+                  return error === null
+                    ? null
+                    : error === "quota"
+                      ? "Cihazda yer kalmadı; fiyat kaydedilemedi."
+                      : "Fiyat kaydedilemedi.";
                 },
                 onSettingsChange: (next) => {
                   setSettings(next);
