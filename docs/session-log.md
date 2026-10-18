@@ -88,3 +88,16 @@ WhatsApp PNG hiç denenmedi).
   ürün stilleri admin.module.css'ten silindi.
 - Sıradaki: kod incelemesinden iki küçük düzeltme (görsel eşlemesi, PNG'de yıl), sonra
   araştırmanın kalan P1/P2 maddeleri.
+
+## 18.10.2026 — çekirdek @snn/abacus-core 4.3.0 → 4.4.0
+
+- PR #14 (çekirdek yayılım görevlisi) incelendi; değişiklik yalnız `package.json` ve kilit dosyası.
+- Değişiklik günlüğünde davranışı değişen yerler tarandı. Projede kullanılanlar:
+  `money.fmtDecimalGrouped` (`ReportsTab.tsx` adet sayımı) ve `money.formatMinorInput`
+  (`parts/format.ts` giriş kutusu). İkisi de elle eksi eklemiyor; çift eksi riski yok.
+  -1 ile 0 arasındaki eksi değerler artık doğru işaretle görünür.
+- `properNounSuffix`, `text.plate`/`yeniKayit`, `compactMajor` projede kullanılmıyor.
+- Yerel doğrulama (PR dalı, `npm ci`): kurulu çekirdek 4.4.0; `npm run build` yeşil;
+  `npm test` 9 dosya, 132 test geçti. CI üç denetimde yeşil.
+- PR #14 birleştirme commit'iyle birleşti (803e827), dal silindi.
+- Yayın (`npm run deploy`) yapılmadı; proje sahibinin onayını bekler.
