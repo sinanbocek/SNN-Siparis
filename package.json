@@ -35,8 +35,8 @@
     "@hugeicons/react": "^1.1.10",
     "@snn/abacus-core": "github:sinanbocek/snn-abacus-core#semver:^4.4.0",
     "html-to-image": "^1.11.13",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
