@@ -9,10 +9,6 @@ on:
       - "README.md"
   pull_request:
     branches: [main]
-    paths-ignore:
-      - "docs/**"
-      - "CHANGELOG.md"
-      - "README.md"
 
 # Kota koruması: aynı dala arka arkaya gönderimde eski koşum iptal edilir; main'de iptal yok.
 concurrency:
